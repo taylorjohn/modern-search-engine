@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transparent Search Engine</title>
+    <style>
+        :root {
+            --primary-color: #5b5fc7;
+            --background-color: #f4f4f9;
+            --card-background: #ffffff;
+            --border-color: #ddd;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--background-color);
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .search-container {
+            max-width: 800px;
+            margin: 2rem auto;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .processing-steps {
+            background: var(--card-background);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .step {
+            padding: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .step:last-child {
+            border-bottom: none;
+        }
+
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .results-container {
+            background: var(--card-background);
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .result-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .score-breakdown {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+
+        .score-item {
+            background: #f0f0f0;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="search-container">
+        <input type="text" class="search-input" id="searchInput" placeholder="Enter your search query...">
+        
+        <div class="processing-steps" id="processingSteps">
+            <h3>Processing Steps</h3>
+            <!-- Steps will be inserted here -->
+        </div>
+
+        <div class="results-container" id="searchResults">
+            <!-- Results will be inserted here -->
+        </div>
+    </div>
+
+    <script>
+        async function performSearch() {
+            const query = document.getElementById('searchInput').value;
+            const response = await fetch(`/search?q=${encodeURIComponent(query)}`);
+            const data = await response.json();
+            
+            // Display processing steps
+            const stepsHtml = data.processing_steps.map(step => `
+                <div class="step">
+                    <div class="step-header">
+                        <span>${step.step_name}</span>
+                        <span>${step.time_taken_ms.toFixed(2)}ms</span>
+                    </div>
+                    <div class="step-description">${step.description}</div>
+                </div>
+            `).join('');
+            document.getElementById('processingSteps').innerHTML = `
+                <h3>Processing Steps</h3>
+                ${stepsHtml}
+            `;
+
+            // Display results
+            const resultsHtml = data.final_results.map(result => `
+                <div class="result-item">
+                    <h3>${result.title}</h3>
+                    <p>${result.snippet}</p>
+                    <div class="score-breakdown">
+                        <span class="score-item">Semantic: ${result.semantic_similarity.toFixed(2)}</span>
+                        <span class="score-item">Term Match: ${result.term_match_score.toFixed(2)}</span>
+                        <span class="score-item">Final Score: ${result.final_score.toFixed(2)}</span>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('searchResults').innerHTML = resultsHtml;
+        }
+
+        document.getElementById('searchInput').addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+    </script>
+</body>
+</html>

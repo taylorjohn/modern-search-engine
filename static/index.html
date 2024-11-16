@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Search Engine</title>
+    <style>
+        :root {
+            --primary-color: #4a6da7;
+            --secondary-color: #8aa9da;
+            --background-color: #f5f7fa;
+            --card-background: #ffffff;
+            --border-color: #e1e7ef;
+            --text-color: #2c3e50;
+            --shadow: 0 2px 4px rgba(0,0,0,0.1);
+            --error-color: #dc3545;
+            --error-bg: #f8d7da;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 2rem 0;
+            background: var(--card-background);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        header h1 {
+            color: var(--primary-color);
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .search-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .search-box {
+            background: var(--card-background);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            font-size: 1.1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            padding-right: 40px; /* Space for the icon */
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(74, 109, 167, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+            pointer-events: none;
+        }
+
+        #processingSteps {
+            background: var(--card-background);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        #processingSteps h3 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .step {
+            background: var(--background-color);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            transition: transform 0.2s ease;
+        }
+
+        .step:hover {
+            transform: translateX(5px);
+        }
+
+        .step:last-child {
+            margin-bottom: 0;
+        }
+
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-name {
+            font-weight: 600;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .step-time {
+            font-size: 0.9rem;
+            color: #666;
+            background: #e9ecef;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .step-description {
+            color: #666;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        #searchResults {
+            background: var(--card-background);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .result-item {
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            transition: transform 0.2s ease;
+        }
+
+        .result-item:hover {
+            transform: translateX(5px);
+            background: var(--background-color);
+            border-radius: 8px;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-title {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .result-snippet {
+            color: #555;
+            margin-bottom: 0.75rem;
+            line-height: 1.6;
+        }
+
+        .score-breakdown {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-top: 0.75rem;
+        }
+
+        .score-item {
+            background: var(--background-color);
+            padding: 0.4rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: transform 0.2s ease;
+        }
+
+        .score-item:hover {
+            transform: scale(1.05);
+        }
+
+        .error {
+            color: var(--error-color);
+            padding: 1rem;
+            background: var(--error-bg);
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        /* Loading indicator */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto;
+            border: 4px solid var(--background-color);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            header {
+                padding: 1rem 0;
+            }
+
+            header h1 {
+                font-size: 2rem;
+            }
+
+            .search-box {
+                padding: 1rem;
+            }
+
+            .search-input {
+                padding: 0.75rem 1rem;
+                font-size: 1rem;
+            }
+
+            .step, .result-item {
+                padding: 1rem;
+            }
+
+            .score-breakdown {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .score-item {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Advanced Search Engine</h1>
+        <p>Enter your query to search with transparency</p>
+    </header>
+
+    <div class="search-container">
+        <div class="search-box">
+            <div class="search-input-wrapper">
+                <input type="text" 
+                       class="search-input" 
+                       id="searchInput" 
+                       placeholder="Enter your search query..."
+                       autocomplete="off"
+                >
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            </div>
+        </div>
+
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <p>Processing your search...</p>
+        </div>
+
+        <div id="processingSteps">
+            <h3>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3a9 9 0 1 0 9 9"></path>
+                    <path d="M12 3v9l6.2-3.1"></path>
+                </svg>
+                Processing Steps
+            </h3>
+            <!-- Steps will be inserted here -->
+        </div>
+
+        <div id="searchResults">
+            <div class="no-results">Enter a search query to see results</div>
+        </div>
+    </div>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const processingSteps = document.getElementById('processingSteps');
+        const searchResults = document.getElementById('searchResults');
+        const loadingIndicator = document.querySelector('.loading');
+
+        // Add base URL configuration
+        const API_BASE = window.location.origin;
+
+        async function performSearch(query) {
+            try {
+                // Show loading indicator
+                loadingIndicator.classList.add('active');
+                searchResults.style.opacity = '0.5';
+
+                const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(query)}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                // Display processing steps
+                const stepsHtml = data.processing_steps.map(step => `
+                    <div class="step">
+                        <div class="step-header">
+                            <span class="step-name">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                                ${step.step_name}
+                            </span>
+                            <span class="step-time">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                                ${step.time_taken_ms.toFixed(2)}ms
+                            </span>
+                        </div>
+                        <div class="step-description">${step.description}</div>
+                    </div>
+                `).join('');
+                
+                processingSteps.innerHTML = `
+                    <h3>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 3a9 9 0 1 0 9 9"></path>
+                            <path d="M12 3v9l6.2-3.1"></path>
+                        </svg>
+                        Processing Steps
+                    </h3>
+                    ${stepsHtml}
+                `;
+
+                // Display results
+                const resultsHtml = data.final_results.map(result => `
+                    <div class="result-item">
+                        <h3 class="result-title">${result.title}</h3>
+                        <p class="result-snippet">${result.snippet}</p>
+                        <div class="score-breakdown">
+                            <span class="score-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                </svg>
+                                Semantic: ${result.semantic_similarity.toFixed(2)}
+                            </span>
+                            <span class="score-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                                    <line x1="4" y1="22" x2="4" y2="15"></line>
+                                </svg>
+                                Term Match: ${result.term_match_score.toFixed(2)}
+                            </span>
+                            <span class="score-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                </svg>
+                                Final Score: ${result.final_score.toFixed(2)}
+                            </span>
+                        </div>
+                    </div>
+                `).join('');
+                
+                searchResults.innerHTML = resultsHtml || `
+                    <div class="no-results">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1rem;">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            <line x1="11" y1="8" x2="11" y2="14"></line>
+                            <line x1="8" y1="11" x2="14" y2="11"></line>
+                        </svg>
+                        <p>No results found for your query</p>
+                    </div>`;
+
+            } catch (error) {
+                console.error('Search failed:', error);
+                searchResults.innerHTML = `
+                    <div class="error">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        Search failed: ${error.message}
+                    </div>`;
+            } finally {
+                // Hide loading indicator and restore opacity
+                loadingIndicator.classList.remove('active');
+                searchResults.style.opacity = '1';
+            }
+        }
+
+        // Debounce function to limit API calls
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
+        // Add event listeners
+        const debouncedSearch = debounce((query) => {
+            if (query.trim().length > 0) {
+                performSearch(query);
+            } else {
+                // Reset the view when search is empty
+                processingSteps.innerHTML = `
+                    <h3>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 3a9 9 0 1 0 9 9"></path>
+                            <path d="M12 3v9l6.2-3.1"></path>
+                        </svg>
+                        Processing Steps
+                    </h3>`;
+                searchResults.innerHTML = '<div class="no-results">Enter a search query to see results</div>';
+            }
+        }, 300);
+
+        searchInput.addEventListener('input', (e) => {
+            debouncedSearch(e.target.value);
+        });
+
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const query = e.target.value.trim();
+                if (query) {
+                    performSearch(query);
+                }
+            }
+        });
+
+        // Initial focus
+        searchInput.focus();
+    </script>
+</body>
+</html>

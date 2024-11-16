@@ -1,0 +1,957 @@
+╭─dev@Johns-Air ~/jt/search-engine ‹master●›
+╰─$ cargo build
+    Updating crates.io index
+     Locking 327 packages to latest compatible versions
+      Adding ahash v0.7.8 (latest: v0.8.11)
+      Adding aho-corasick v0.7.20 (latest: v1.1.3)
+      Adding base64 v0.13.1 (latest: v0.22.1)
+      Adding base64 v0.21.7 (latest: v0.22.1)
+      Adding bitflags v1.3.2 (latest: v2.6.0)
+      Adding bitpacking v0.8.4 (latest: v0.9.2)
+      Adding constant_time_eq v0.1.5 (latest: v0.3.1)
+      Adding core-foundation v0.9.4 (latest: v0.10.0)
+      Adding dirs v4.0.0 (latest: v5.0.1)
+      Adding dirs-sys v0.3.7 (latest: v0.4.1)
+      Adding encode_unicode v0.3.6 (latest: v1.0.0)
+      Adding foreign-types v0.3.2 (latest: v0.5.0)
+      Adding foreign-types-shared v0.1.1 (latest: v0.3.1)
+      Adding generic-array v0.14.7 (latest: v1.1.0)
+      Adding h2 v0.3.26 (latest: v0.4.6)
+      Adding half v1.8.3 (latest: v2.4.1)
+      Adding hashbrown v0.12.3 (latest: v0.15.1)
+      Adding headers v0.3.9 (latest: v0.4.0)
+      Adding headers-core v0.2.0 (latest: v0.3.0)
+      Adding hermit-abi v0.3.9 (latest: v0.4.0)
+      Adding http v0.2.12 (latest: v1.1.0)
+      Adding http-body v0.4.6 (latest: v1.0.1)
+      Adding hyper v0.14.31 (latest: v1.5.0)
+      Adding hyper-tls v0.5.0 (latest: v0.6.0)
+      Adding indicatif v0.16.2 (latest: v0.17.9)
+      Adding itertools v0.10.5 (latest: v0.13.0)
+      Adding linux-raw-sys v0.4.14 (latest: v0.6.5)
+      Adding lru v0.7.8 (latest: v0.12.5)
+      Adding lz4_flex v0.9.5 (latest: v0.11.3)
+      Adding memmap2 v0.5.10 (latest: v0.9.5)
+      Adding multer v2.1.0 (latest: v3.1.0)
+      Adding murmurhash32 v0.2.0 (latest: v0.3.1)
+      Adding ndarray v0.15.6 (latest: v0.16.1)
+      Adding nu-ansi-term v0.46.0 (latest: v0.50.1)
+      Adding ordered-float v3.9.2 (latest: v4.5.0)
+      Adding ownedbytes v0.4.0 (latest: v0.7.0)
+      Adding password-hash v0.4.2 (latest: v0.5.0)
+      Adding pbkdf2 v0.11.0 (latest: v0.12.2)
+      Adding protobuf v2.27.1 (latest: v3.7.1)
+      Adding regex-syntax v0.6.29 (latest: v0.8.5)
+      Adding reqwest v0.11.27 (latest: v0.12.9)
+      Adding rust-bert v0.20.0 (latest: v0.23.0)
+      Adding rust_tokenizers v7.0.2 (latest: v8.1.1)
+      Adding rustc-hash v1.1.0 (latest: v2.0.0)
+      Adding rustls-pemfile v1.0.4 (latest: v2.2.0)
+      Adding security-framework v2.11.1 (latest: v3.0.1)
+      Adding sync_wrapper v0.1.2 (latest: v1.0.1)
+      Adding system-configuration v0.5.1 (latest: v0.6.1)
+      Adding system-configuration-sys v0.5.0 (latest: v0.6.0)
+      Adding tantivy v0.19.2 (latest: v0.22.0)
+      Adding tantivy-bitpacker v0.3.0 (latest: v0.6.0)
+      Adding tantivy-common v0.4.0 (latest: v0.7.0)
+      Adding tantivy-fst v0.4.0 (latest: v0.5.0)
+      Adding tantivy-query-grammar v0.19.0 (latest: v0.22.0)
+      Adding tch v0.10.3 (latest: v0.18.0)
+      Adding thiserror v1.0.69 (latest: v2.0.3)
+      Adding thiserror-impl v1.0.69 (latest: v2.0.3)
+      Adding tokio-tungstenite v0.21.0 (latest: v0.24.0)
+      Adding torch-sys v0.10.3 (latest: v0.18.0)
+      Adding tungstenite v0.21.0 (latest: v0.24.0)
+      Adding wasi v0.11.0+wasi-snapshot-preview1 (latest: v0.13.3+wasi-0.2.2)
+      Adding windows-core v0.52.0 (latest: v0.58.0)
+      Adding windows-sys v0.48.0 (latest: v0.59.0)
+      Adding windows-sys v0.52.0 (latest: v0.59.0)
+      Adding windows-targets v0.48.5 (latest: v0.52.6)
+      Adding windows_aarch64_gnullvm v0.48.5 (latest: v0.52.6)
+      Adding windows_aarch64_msvc v0.48.5 (latest: v0.52.6)
+      Adding windows_i686_gnu v0.48.5 (latest: v0.52.6)
+      Adding windows_i686_msvc v0.48.5 (latest: v0.52.6)
+      Adding windows_x86_64_gnu v0.48.5 (latest: v0.52.6)
+      Adding windows_x86_64_gnullvm v0.48.5 (latest: v0.52.6)
+      Adding windows_x86_64_msvc v0.48.5 (latest: v0.52.6)
+      Adding winreg v0.50.0 (latest: v0.52.0)
+      Adding zerocopy v0.7.35 (latest: v0.8.10)
+      Adding zerocopy-derive v0.7.35 (latest: v0.8.10)
+      Adding zip v0.6.6 (latest: v2.2.0)
+      Adding zstd v0.11.2+zstd.1.5.2 (latest: v0.13.2)
+      Adding zstd-safe v5.0.2+zstd.1.5.2 (latest: v7.2.1)
+   Compiling proc-macro2 v1.0.89
+   Compiling unicode-ident v1.0.13
+   Compiling libc v0.2.164
+   Compiling cfg-if v1.0.0
+   Compiling version_check v0.9.5
+   Compiling autocfg v1.4.0
+   Compiling smallvec v1.13.2
+   Compiling shlex v1.3.0
+   Compiling typenum v1.17.0
+   Compiling once_cell v1.20.2
+   Compiling litemap v0.7.3
+   Compiling generic-array v0.14.7
+   Compiling writeable v0.5.5
+   Compiling memchr v2.7.4
+   Compiling subtle v2.6.1
+   Compiling icu_locid_transform_data v1.5.0
+   Compiling itoa v1.0.11
+   Compiling pkg-config v0.3.31
+   Compiling stable_deref_trait v1.2.0
+   Compiling byteorder v1.5.0
+   Compiling icu_properties_data v1.5.0
+   Compiling jobserver v0.1.32
+   Compiling utf8_iter v1.0.4
+   Compiling write16 v1.0.0
+   Compiling icu_normalizer_data v1.5.0
+   Compiling utf16_iter v1.0.5
+   Compiling bytes v1.8.0
+   Compiling cc v1.2.1
+   Compiling log v0.4.22
+   Compiling quote v1.0.37
+   Compiling pin-project-lite v0.2.15
+   Compiling syn v2.0.87
+   Compiling serde v1.0.215
+   Compiling fnv v1.0.7
+   Compiling slab v0.4.9
+   Compiling lock_api v0.4.12
+   Compiling futures-sink v0.3.31
+   Compiling futures-core v0.3.31
+   Compiling parking_lot_core v0.9.10
+   Compiling getrandom v0.2.15
+   Compiling rand_core v0.6.4
+   Compiling powerfmt v0.2.0
+   Compiling scopeguard v1.2.0
+   Compiling zstd-safe v5.0.2+zstd.1.5.2
+   Compiling core-foundation-sys v0.8.7
+   Compiling cpufeatures v0.2.15
+   Compiling futures-channel v0.3.31
+   Compiling pin-utils v0.1.0
+   Compiling base64ct v1.6.0
+   Compiling futures-io v0.3.31
+   Compiling crypto-common v0.1.6
+   Compiling block-buffer v0.10.4
+   Compiling rustix v0.38.40
+   Compiling digest v0.10.7
+   Compiling futures-task v0.3.31
+   Compiling bitflags v2.6.0
+   Compiling inout v0.1.3
+   Compiling parking_lot v0.12.3
+   Compiling errno v0.3.9
+   Compiling mio v1.0.2
+   Compiling socket2 v0.5.7
+   Compiling signal-hook-registry v1.4.2
+   Compiling http v0.2.12
+   Compiling zstd-sys v2.0.13+zstd.1.5.6
+   Compiling bzip2-sys v0.1.11+1.0.8
+   Compiling ring v0.17.8
+   Compiling crc32fast v1.4.2
+   Compiling httparse v1.9.5
+   Compiling adler2 v2.0.0
+   Compiling time-core v0.1.2
+   Compiling num-conv v0.1.0
+   Compiling miniz_oxide v0.8.0
+   Compiling hmac v0.12.1
+   Compiling cipher v0.4.4
+   Compiling tracing-core v0.1.32
+   Compiling crossbeam-utils v0.8.20
+   Compiling thiserror v1.0.69
+   Compiling synstructure v0.13.1
+   Compiling flate2 v1.0.35
+   Compiling num-traits v0.2.19
+   Compiling percent-encoding v2.3.1
+   Compiling rustls-pki-types v1.10.0
+   Compiling spin v0.9.8
+   Compiling ryu v1.0.18
+   Compiling untrusted v0.9.0
+   Compiling form_urlencoded v1.2.1
+   Compiling sha1 v0.10.6
+   Compiling core-foundation v0.9.4
+   Compiling aho-corasick v1.1.3
+   Compiling rustls v0.23.17
+   Compiling equivalent v1.0.1
+   Compiling regex-syntax v0.8.5
+   Compiling constant_time_eq v0.1.5
+   Compiling hashbrown v0.15.1
+   Compiling lazy_static v1.5.0
+   Compiling fastrand v2.2.0
+   Compiling password-hash v0.4.2
+   Compiling tempfile v3.14.0
+   Compiling indexmap v2.6.0
+   Compiling sha2 v0.10.8
+   Compiling security-framework-sys v2.12.1
+   Compiling zerofrom-derive v0.1.4
+   Compiling yoke-derive v0.7.4
+   Compiling zerovec-derive v0.10.3
+   Compiling displaydoc v0.2.5
+   Compiling icu_provider_macros v1.5.0
+   Compiling serde_derive v1.0.215
+   Compiling zerocopy-derive v0.7.35
+   Compiling futures-macro v0.3.31
+   Compiling tokio-macros v2.4.0
+   Compiling zerofrom v0.1.4
+   Compiling yoke v0.7.4
+   Compiling futures-util v0.3.31
+   Compiling zerocopy v0.7.35
+   Compiling zerovec v0.10.4
+   Compiling tokio v1.41.1
+   Compiling thiserror-impl v1.0.69
+   Compiling ppv-lite86 v0.2.20
+   Compiling rand_chacha v0.3.1
+   Compiling tinystr v0.7.6
+   Compiling icu_collections v1.5.0
+   Compiling icu_locid v1.5.0
+   Compiling icu_provider v1.5.0
+   Compiling rand v0.8.5
+   Compiling tracing-attributes v0.1.27
+   Compiling icu_locid_transform v1.5.0
+   Compiling icu_properties v1.5.1
+   Compiling tracing v0.1.40
+   Compiling rustls-webpki v0.102.8
+   Compiling tokio-util v0.7.12
+   Compiling regex-automata v0.4.9
+   Compiling deranged v0.3.11
+   Compiling ahash v0.7.8
+   Compiling icu_normalizer v1.5.0
+   Compiling zeroize v1.8.1
+   Compiling anyhow v1.0.93
+   Compiling native-tls v0.2.12
+   Compiling idna_adapter v1.2.0
+   Compiling idna v1.0.3
+   Compiling try-lock v0.2.5
+   Compiling httpdate v1.0.3
+   Compiling mime v0.3.17
+   Compiling serde_json v1.0.132
+   Compiling regex v1.11.1
+   Compiling url v2.5.3
+   Compiling want v0.3.1
+   Compiling time v0.3.36
+   Compiling h2 v0.3.26
+   Compiling security-framework v2.11.1
+   Compiling pbkdf2 v0.11.0
+   Compiling bzip2 v0.4.4
+   Compiling crossbeam-epoch v0.9.18
+   Compiling webpki-roots v0.26.6
+   Compiling aes v0.8.4
+   Compiling http-body v0.4.6
+   Compiling either v1.13.0
+   Compiling system-configuration-sys v0.5.0
+   Compiling tower-service v0.3.3
+   Compiling base64 v0.21.7
+   Compiling base64 v0.22.1
+   Compiling rayon-core v1.12.1
+   Compiling ureq v2.10.1
+   Compiling crossbeam-deque v0.8.5
+   Compiling zstd v0.11.2+zstd.1.5.2
+   Compiling zip v0.6.6
+   Compiling matrixmultiply v0.3.9
+   Compiling encoding_rs v0.8.35
+   Compiling hashbrown v0.12.3
+   Compiling tokio-native-tls v0.3.1
+   Compiling hyper v0.14.31
+   Compiling itertools v0.10.5
+   Compiling serde_urlencoded v0.7.1
+   Compiling torch-sys v0.10.3
+   Compiling unicase v2.8.0
+   Compiling rawpointer v0.2.1
+   Compiling crunchy v0.2.2
+   Compiling tinyvec_macros v0.1.1
+   Compiling bitflags v1.3.2
+   Compiling protobuf v2.27.1
+   Compiling system-configuration v0.5.1
+   Compiling mime_guess v2.0.5
+   Compiling tinyvec v1.8.0
+   Compiling rayon v1.10.0
+   Compiling rustls-pemfile v1.0.4
+   Compiling num-complex v0.4.6
+   Compiling num-integer v0.1.46
+   Compiling console v0.15.8
+   Compiling xattr v1.3.1
+   Compiling fs2 v0.4.3
+   Compiling filetime v0.2.25
+   Compiling http v1.1.0
+   Compiling ownedbytes v0.4.0
+   Compiling csv-core v0.1.11
+   Compiling multer v2.1.0
+   Compiling data-encoding v2.6.0
+   Compiling number_prefix v0.4.0
+   Compiling sync_wrapper v0.1.2
+   Compiling utf-8 v0.7.6
+   Compiling ipnet v2.10.1
+   Compiling rust_tokenizers v7.0.2
+   Compiling indicatif v0.16.2
+   Compiling tungstenite v0.21.0
+   Compiling hyper-tls v0.5.0
+   Compiling reqwest v0.11.27
+   Compiling csv v1.3.1
+   Compiling tantivy-common v0.4.0
+   Compiling tar v0.4.43
+   Compiling ndarray v0.15.6
+   Compiling unicode-normalization v0.1.24
+   Compiling uuid v1.11.0
+   Compiling pin-project-internal v1.1.7
+   Compiling headers-core v0.2.0
+   Compiling dirs-sys v0.3.7
+   Compiling combine v4.6.7
+   Compiling unicode-normalization-alignments v0.1.12
+   Compiling instant v0.1.13
+   Compiling fastdivide v0.4.2
+   Compiling half v1.8.3
+   Compiling utf8-ranges v1.0.5
+   Compiling glob v0.3.1
+   Compiling regex-syntax v0.6.29
+   Compiling tantivy-bitpacker v0.3.0
+   Compiling overload v0.1.1
+   Compiling nu-ansi-term v0.46.0
+   Compiling fastfield_codecs v0.3.1
+   Compiling pin-project v1.1.7
+   Compiling cached-path v0.6.1
+   Compiling tantivy-fst v0.4.0
+   Compiling measure_time v0.8.3
+   Compiling dirs v4.0.0
+   Compiling headers v0.3.9
+   Compiling bitpacking v0.8.4
+   Compiling tantivy-query-grammar v0.19.0
+   Compiling tokio-tungstenite v0.21.0
+   Compiling lru v0.7.8
+   Compiling rust-stemmers v1.2.0
+   Compiling fail v0.5.1
+   Compiling futures-executor v0.3.31
+   Compiling ordered-float v3.9.2
+   Compiling async-trait v0.1.83
+   Compiling sharded-slab v0.1.7
+   Compiling crossbeam-channel v0.5.13
+   Compiling tracing-log v0.2.0
+   Compiling iana-time-zone v0.1.61
+   Compiling num_cpus v1.16.0
+   Compiling memmap2 v0.5.10
+   Compiling murmurhash32 v0.2.0
+   Compiling aho-corasick v0.7.20
+   Compiling thread_local v1.1.8
+   Compiling half v2.4.1
+   Compiling htmlescape v0.3.1
+   Compiling scoped-tls v1.0.1
+   Compiling census v0.4.2
+   Compiling lz4_flex v0.9.5
+   Compiling levenshtein_automata v0.2.1
+   Compiling base64 v0.13.1
+   Compiling rustc-hash v1.1.0
+   Compiling downcast-rs v1.2.1
+   Compiling oneshot v0.1.8
+   Compiling arc-swap v1.7.1
+   Compiling warp v0.3.7
+   Compiling tracing-subscriber v0.3.18
+   Compiling tantivy v0.19.2
+   Compiling chrono v0.4.38
+   Compiling futures v0.3.31
+   Compiling tch v0.10.3
+   Compiling rust-bert v0.20.0
+   Compiling search-engine v0.1.0 (/Users/dev/jt/search-engine)
+error: unexpected closing delimiter: `}`
+  --> src/tests.rs:58:1
+   |
+35 |     fn test_data_layer() {
+   |                          - this opening brace...
+...
+57 |     }
+   |     - ...matches this closing brace
+58 | }
+   | ^ unexpected closing delimiter
+
+error: could not compile `search-engine` (bin "search-engine") due to 1 previous error
+╭─dev@Johns-Air ~/jt/search-engine ‹master●›
+╰─$ cargo build                                                           101 ↵
+   Compiling search-engine v0.1.0 (/Users/dev/jt/search-engine)
+error[E0432]: unresolved import `crate::query_expander::QueryExpander`
+ --> src/search_handler.rs:3:5
+  |
+3 | use crate::query_expander::QueryExpander;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `QueryExpander` in `query_expander`
+
+error[E0432]: unresolved import `crate::spell_checker::SpellChecker`
+ --> src/search_handler.rs:4:5
+  |
+4 | use crate::spell_checker::SpellChecker;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `SpellChecker` in `spell_checker`
+
+error[E0432]: unresolved import `crate::trie::Trie`
+ --> src/search_handler.rs:5:5
+  |
+5 | use crate::trie::Trie;
+  |     ^^^^^^^^^^^^^^^^^ no `Trie` in `trie`
+
+error[E0432]: unresolved import `crate::query_expander::QueryExpander`
+  --> src/main.rs:15:5
+   |
+15 | use crate::query_expander::QueryExpander;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `QueryExpander` in `query_expander`
+
+error[E0432]: unresolved import `crate::spell_checker::SpellChecker`
+  --> src/main.rs:16:5
+   |
+16 | use crate::spell_checker::SpellChecker;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `SpellChecker` in `spell_checker`
+
+error[E0432]: unresolved import `crate::trie::Trie`
+  --> src/main.rs:17:5
+   |
+17 | use crate::trie::Trie;
+   |     ^^^^^^^^^^^^^^^^^ no `Trie` in `trie`
+
+error: cannot find derive macro `Serialize` in this scope
+ --> src/search_result.rs:1:17
+  |
+1 | #[derive(Debug, Serialize)]
+  |                 ^^^^^^^^^
+  |
+help: consider importing this derive macro
+  |
+1 + use serde::Serialize;
+  |
+
+error: cannot find derive macro `Serialize` in this scope
+  --> src/search_result.rs:12:17
+   |
+12 | #[derive(Debug, Serialize)]
+   |                 ^^^^^^^^^
+   |
+help: consider importing this derive macro
+   |
+1  + use serde::Serialize;
+   |
+
+error: cannot find derive macro `Serialize` in this scope
+  --> src/search_result.rs:21:17
+   |
+21 | #[derive(Debug, Serialize)]
+   |                 ^^^^^^^^^
+   |
+help: consider importing this derive macro
+   |
+1  + use serde::Serialize;
+   |
+
+error[E0412]: cannot find type `Arc` in this scope
+  --> src/search_handler.rs:11:12
+   |
+11 |     index: Arc<Index>,
+   |            ^^^ not found in this scope
+   |
+help: consider importing this struct
+   |
+1  + use std::sync::Arc;
+   |
+
+error[E0412]: cannot find type `Arc` in this scope
+  --> src/search_handler.rs:12:13
+   |
+12 |     schema: Arc<Schema>,
+   |             ^^^ not found in this scope
+   |
+help: consider importing this struct
+   |
+1  + use std::sync::Arc;
+   |
+
+error[E0412]: cannot find type `Arc` in this scope
+  --> src/search_handler.rs:13:21
+   |
+13 |     query_expander: Arc<QueryExpander>,
+   |                     ^^^ not found in this scope
+   |
+help: consider importing this struct
+   |
+1  + use std::sync::Arc;
+   |
+
+error[E0412]: cannot find type `Arc` in this scope
+  --> src/search_handler.rs:14:20
+   |
+14 |     spell_checker: Arc<SpellChecker>,
+   |                    ^^^ not found in this scope
+   |
+help: consider importing this struct
+   |
+1  + use std::sync::Arc;
+   |
+
+error[E0412]: cannot find type `Arc` in this scope
+  --> src/search_handler.rs:15:11
+   |
+15 |     trie: Arc<Trie>,
+   |           ^^^ not found in this scope
+   |
+help: consider importing this struct
+   |
+1  + use std::sync::Arc;
+   |
+
+error[E0412]: cannot find type `Arc` in this scope
+  --> src/search_handler.rs:16:24
+   |
+16 |     semantic_analyzer: Arc<Mutex<SemanticAnalyzer>>,
+   |                        ^^^ not found in this scope
+   |
+help: consider importing this struct
+   |
+1  + use std::sync::Arc;
+   |
+
+error[E0412]: cannot find type `Mutex` in this scope
+  --> src/search_handler.rs:16:28
+   |
+16 |     semantic_analyzer: Arc<Mutex<SemanticAnalyzer>>,
+   |                            ^^^^^ not found in this scope
+   |
+help: consider importing one of these items
+   |
+1  + use futures::lock::Mutex;
+   |
+1  + use parking_lot::Mutex;
+   |
+1  + use std::sync::Mutex;
+   |
+1  + use tokio::sync::Mutex;
+   |
+
+error[E0433]: failed to resolve: use of undeclared type `Instant`
+  --> src/search_handler.rs:22:17
+   |
+22 |     let start = Instant::now();
+   |                 ^^^^^^^ use of undeclared type `Instant`
+   |
+help: consider importing one of these items
+   |
+1  + use std::time::Instant;
+   |
+1  + use tokio::time::Instant;
+   |
+
+error[E0433]: failed to resolve: use of undeclared type `Instant`
+  --> src/search_handler.rs:31:17
+   |
+31 |     let start = Instant::now();
+   |                 ^^^^^^^ use of undeclared type `Instant`
+   |
+help: consider importing one of these items
+   |
+1  + use std::time::Instant;
+   |
+1  + use tokio::time::Instant;
+   |
+
+error[E0433]: failed to resolve: use of undeclared type `Instant`
+  --> src/search_handler.rs:40:17
+   |
+40 |     let start = Instant::now();
+   |                 ^^^^^^^ use of undeclared type `Instant`
+   |
+help: consider importing one of these items
+   |
+1  + use std::time::Instant;
+   |
+1  + use tokio::time::Instant;
+   |
+
+error[E0433]: failed to resolve: use of undeclared type `Instant`
+  --> src/search_handler.rs:49:17
+   |
+49 |     let start = Instant::now();
+   |                 ^^^^^^^ use of undeclared type `Instant`
+   |
+help: consider importing one of these items
+   |
+1  + use std::time::Instant;
+   |
+1  + use tokio::time::Instant;
+   |
+
+error[E0405]: cannot find trait `Error` in this scope
+  --> src/data_layer.rs:20:65
+   |
+20 |     fn add_document(&self, doc: Document) -> Result<(), Box<dyn Error>>;
+   |                                                                 ^^^^^ not found in this scope
+   |
+help: consider importing one of these items
+   |
+1  + use core::error::Error;
+   |
+1  + use serde::de::Error;
+   |
+1  + use serde::ser::Error;
+   |
+1  + use std::error::Error;
+   |
+
+error[E0405]: cannot find trait `Error` in this scope
+  --> src/data_layer.rs:21:74
+   |
+21 | ...<Document>, Box<dyn Error>>;
+   |                        ^^^^^ not found in this scope
+   |
+help: consider importing one of these items
+   |
+1  + use core::error::Error;
+   |
+1  + use serde::de::Error;
+   |
+1  + use serde::ser::Error;
+   |
+1  + use std::error::Error;
+   |
+
+error[E0405]: cannot find trait `Error` in this scope
+  --> src/data_layer.rs:22:78
+   |
+22 | ...<Document>, Box<dyn Error>>;
+   |                        ^^^^^ not found in this scope
+   |
+help: consider importing one of these items
+   |
+1  + use core::error::Error;
+   |
+1  + use serde::de::Error;
+   |
+1  + use serde::ser::Error;
+   |
+1  + use std::error::Error;
+   |
+
+error[E0405]: cannot find trait `Error` in this scope
+  --> src/data_layer.rs:38:65
+   |
+38 |     fn add_document(&self, doc: Document) -> Result<(), Box<dyn Error>> {
+   |                                                                 ^^^^^ not found in this scope
+   |
+help: consider importing one of these items
+   |
+1  + use core::error::Error;
+   |
+1  + use serde::de::Error;
+   |
+1  + use serde::ser::Error;
+   |
+1  + use std::error::Error;
+   |
+
+error[E0405]: cannot find trait `Error` in this scope
+  --> src/data_layer.rs:44:74
+   |
+44 | ...<Document>, Box<dyn Error>> {
+   |                        ^^^^^ not found in this scope
+   |
+help: consider importing one of these items
+   |
+1  + use core::error::Error;
+   |
+1  + use serde::de::Error;
+   |
+1  + use serde::ser::Error;
+   |
+1  + use std::error::Error;
+   |
+
+error[E0405]: cannot find trait `Error` in this scope
+  --> src/data_layer.rs:49:78
+   |
+49 | ...<Document>, Box<dyn Error>> {
+   |                        ^^^^^ not found in this scope
+   |
+help: consider importing one of these items
+   |
+1  + use core::error::Error;
+   |
+1  + use serde::de::Error;
+   |
+1  + use serde::ser::Error;
+   |
+1  + use std::error::Error;
+   |
+
+error[E0412]: cannot find type `Arc` in this scope
+ --> src/data_service.rs:5:17
+  |
+5 |     data_layer: Arc<D>,
+  |                 ^^^ not found in this scope
+  |
+help: consider importing this struct
+  |
+1 + use std::sync::Arc;
+  |
+
+error[E0412]: cannot find type `Arc` in this scope
+ --> src/data_service.rs:9:28
+  |
+9 |     pub fn new(data_layer: Arc<D>) -> Self {
+  |                            ^^^ not found in this scope
+  |
+help: consider importing this struct
+  |
+1 + use std::sync::Arc;
+  |
+
+error[E0412]: cannot find type `Document` in this scope
+  --> src/scoring.rs:10:15
+   |
+10 |         doc: &Document,
+   |               ^^^^^^^^ not found in this scope
+   |
+help: consider importing one of these items
+   |
+1  + use crate::data_layer::Document;
+   |
+1  + use tantivy::Document;
+   |
+
+error[E0412]: cannot find type `Field` in this scope
+  --> src/scoring.rs:12:22
+   |
+12 |         title_field: Field,
+   |                      ^^^^^ not found in this scope
+   |
+help: consider importing one of these items
+   |
+1  + use tantivy::schema::Field;
+   |
+1  + use tracing::field::Field;
+   |
+
+error[E0412]: cannot find type `Field` in this scope
+  --> src/scoring.rs:13:21
+   |
+13 |         body_field: Field,
+   |                     ^^^^^ not found in this scope
+   |
+help: consider importing one of these items
+   |
+1  + use tantivy::schema::Field;
+   |
+1  + use tracing::field::Field;
+   |
+
+error[E0405]: cannot find trait `Error` in this scope
+ --> src/semantic_analysis.rs:4:42
+  |
+4 |     pub fn new() -> Result<Self, Box<dyn Error>> {
+  |                                          ^^^^^ not found in this scope
+  |
+help: consider importing one of these items
+  |
+1 + use core::error::Error;
+  |
+1 + use serde::de::Error;
+  |
+1 + use serde::ser::Error;
+  |
+1 + use std::error::Error;
+  |
+
+error[E0412]: cannot find type `QueryExpander` in this scope
+ --> src/query_expander.rs:1:6
+  |
+1 | impl QueryExpander {
+  |      ^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find value `QueryExpander` in this scope
+ --> src/query_expander.rs:3:9
+  |
+3 |         QueryExpander
+  |         ^^^^^^^^^^^^^ not found in this scope
+
+error[E0412]: cannot find type `SpellChecker` in this scope
+ --> src/spell_checker.rs:1:6
+  |
+1 | impl SpellChecker {
+  |      ^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find value `SpellChecker` in this scope
+ --> src/spell_checker.rs:3:9
+  |
+3 |         SpellChecker
+  |         ^^^^^^^^^^^^ not found in this scope
+
+error[E0412]: cannot find type `Trie` in this scope
+ --> src/trie.rs:1:6
+  |
+1 | impl Trie {
+  |      ^^^^ not found in this scope
+
+error[E0425]: cannot find value `Trie` in this scope
+ --> src/trie.rs:3:9
+  |
+3 |         Trie
+  |         ^^^^ not found in this scope
+
+error[E0412]: cannot find type `HashSet` in this scope
+ --> src/suggestions.rs:2:14
+  |
+2 |     history: HashSet<String>,
+  |              ^^^^^^^ not found in this scope
+  |
+help: consider importing this struct
+  |
+1 + use std::collections::HashSet;
+  |
+
+error[E0433]: failed to resolve: use of undeclared type `HashSet`
+ --> src/suggestions.rs:8:22
+  |
+8 |             history: HashSet::new(),
+  |                      ^^^^^^^ use of undeclared type `HashSet`
+  |
+help: consider importing this struct
+  |
+1 + use std::collections::HashSet;
+  |
+
+error[E0433]: failed to resolve: use of undeclared type `Arc`
+  --> src/main.rs:26:17
+   |
+26 |     let index = Arc::new(Index::create_in_ram(tantivy::schema::Schema::b...
+   |                 ^^^ use of undeclared type `Arc`
+   |
+help: consider importing this struct
+   |
+1  + use std::sync::Arc;
+   |
+
+error[E0433]: failed to resolve: use of undeclared type `Arc`
+  --> src/main.rs:28:26
+   |
+28 |     let query_expander = Arc::new(QueryExpander::new());
+   |                          ^^^ use of undeclared type `Arc`
+   |
+help: consider importing this struct
+   |
+1  + use std::sync::Arc;
+   |
+
+error[E0433]: failed to resolve: use of undeclared type `Arc`
+  --> src/main.rs:29:25
+   |
+29 |     let spell_checker = Arc::new(SpellChecker::new());
+   |                         ^^^ use of undeclared type `Arc`
+   |
+help: consider importing this struct
+   |
+1  + use std::sync::Arc;
+   |
+
+error[E0433]: failed to resolve: use of undeclared type `Arc`
+  --> src/main.rs:30:27
+   |
+30 |     let trie_for_search = Arc::new(Trie::new());
+   |                           ^^^ use of undeclared type `Arc`
+   |
+help: consider importing this struct
+   |
+1  + use std::sync::Arc;
+   |
+
+error[E0433]: failed to resolve: use of undeclared type `Arc`
+  --> src/main.rs:31:29
+   |
+31 |     let semantic_analyzer = Arc::new(Mutex::new(SemanticAnalyzer::new()....
+   |                             ^^^ use of undeclared type `Arc`
+   |
+help: consider importing this struct
+   |
+1  + use std::sync::Arc;
+   |
+
+error[E0433]: failed to resolve: use of undeclared type `Mutex`
+  --> src/main.rs:31:38
+   |
+31 | ...yzer = Arc::new(Mutex::new(SemanticAnalyzer::new().unwrap()));
+   |                    ^^^^^ use of undeclared type `Mutex`
+   |
+help: consider importing one of these items
+   |
+1  + use futures::lock::Mutex;
+   |
+1  + use parking_lot::Mutex;
+   |
+1  + use std::sync::Mutex;
+   |
+1  + use tokio::sync::Mutex;
+   |
+
+error[E0433]: failed to resolve: use of undeclared type `Arc`
+  --> src/main.rs:41:23
+   |
+41 |         .and(with_arc(Arc::new(schema.clone())))
+   |                       ^^^ use of undeclared type `Arc`
+   |
+help: consider importing this struct
+   |
+1  + use std::sync::Arc;
+   |
+
+error[E0412]: cannot find type `Arc` in this scope
+  --> src/main.rs:60:10
+   |
+60 |     arc: Arc<T>,
+   |          ^^^ not found in this scope
+   |
+help: consider importing this struct
+   |
+1  + use std::sync::Arc;
+   |
+
+error[E0405]: cannot find trait `Filter` in this scope
+  --> src/main.rs:61:11
+   |
+61 | ) -> impl Filter<Extract = (Arc<T>,), Error = warp::Rejection> + Clone {
+   |           ^^^^^^ not found in this scope
+   |
+help: consider importing one of these items
+   |
+1  + use tracing_subscriber::layer::Filter;
+   |
+1  + use warp::Filter;
+   |
+
+error[E0412]: cannot find type `Arc` in this scope
+  --> src/main.rs:61:29
+   |
+61 | ) -> impl Filter<Extract = (Arc<T>,), Error = warp::Rejection> + Clone {
+   |                             ^^^ not found in this scope
+   |
+help: consider importing this struct
+   |
+1  + use std::sync::Arc;
+   |
+
+error[E0277]: the trait bound `SearchResult: Serialize` is not satisfied
+   --> src/search_handler.rs:78:26
+    |
+78  |     Ok(warp::reply::json(&search_result))
+    |        ----------------- ^^^^^^^^^^^^^^ the trait `Serialize` is not implemented for `SearchResult`
+    |        |
+    |        required by a bound introduced by this call
+    |
+    = note: for local types consider adding `#[derive(serde::Serialize)]` to your `SearchResult` type
+    = note: for types from other crates check whether the crate offers a `serde` feature flag
+    = help: the following other types implement trait `Serialize`:
+              &'a T
+              &'a mut T
+              ()
+              (T,)
+              (T0, T1)
+              (T0, T1, T2)
+              (T0, T1, T2, T3)
+              (T0, T1, T2, T3, T4)
+            and 299 others
+note: required by a bound in `warp::reply::json`
+   --> /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/warp-0.3.7/src/reply.rs:101:8
+    |
+99  | pub fn json<T>(val: &T) -> Json
+    |        ---- required by a bound in this function
+100 | where
+101 |     T: Serialize,
+    |        ^^^^^^^^^ required by this bound in `json`
+
+Some errors have detailed explanations: E0277, E0405, E0412, E0425, E0432, E0433.
+For more information about an error, try `rustc --explain E0277`.
+error: could not compile `search-engine` (bin "search-engine") due to 51 previous errors
