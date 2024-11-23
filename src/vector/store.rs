@@ -1,9 +1,12 @@
-// vector_search.rs
+
 use rust_bert::pipelines::sentence_embeddings::{SentenceEmbeddingsBuilder, SentenceEmbeddingsModel};
 use ndarray::{Array1, ArrayView1};
 use serde::{Serialize, Deserialize};
+use rayon::iter::IntoParallelRefIterator;
 use std::sync::Arc;
 use anyhow::Result;
+use num_traits::float::Float;
+use litemap::store::StoreIterable;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DocumentVector {

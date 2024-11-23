@@ -1,4 +1,4 @@
-use config::{Config, ConfigError, Environment, File};
+use config::{Config, ConfigError, Environment as OtherEnvironment, File};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
@@ -75,5 +75,10 @@ pub struct SearchSettings {
     pub timeout: u64,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Processing
+// src/config/settings.rs
+#[derive(Debug, Deserialize)]
+pub struct Processing {
+    pub max_concurrent_tasks: usize,
+    pub task_timeout_seconds: u64,
+    pub batch_size: usize,
+}

@@ -1,134 +1,161 @@
-// search_executor.rs
-use tantivy::{Index, Document, Score};
-use crate::query_parser::{ParsedQuery, QueryToken};
+// src/search/executor.rs
+use std::sync::Arc;
+use anyhow::{Result, Context};
+use tantivy::{
+    Document, Index, IndexReader, IndexWriter, 
+    collector::TopDocs,
+    query::{Query, QueryParser, BooleanQuery, Occur},
+    schema::{Schema, STORED, TEXT, INDEXED},
+    Score,
+};
+use crate::search::{
+    types::SearchResult,
+    query_parser::ParsedQuery,
+};
 
 pub struct SearchExecutor {
     index: Index,
-}
-
-#[derive(Debug)]
-pub struct SearchResult {
-    pub doc: Document,
-    pub score: Score,
-    pub highlights: Vec<String>,
+    reader: IndexReader,
+    writer: IndexWriter,
+    schema: Schema,
 }
 
 impl SearchExecutor {
-    pub fn new(index: Index) -> Self {
-        Self { index }
+    pub fn new() -> Result<Self> {
+        let mut schema_builder = Schema::builder();
+        
+        // Define schema
+        let title = schema_builder.add_text_field("title", TEXT | STORED);
+        let content = schema_builder.add_text_field("content", TEXT | STORED);
+        let schema = schema_builder.build();
+
+        // Create index
+        let index = Index::create_in_ram(schema.clone());
+        
+        // Create reader and writer
+        let reader = index.reader()?;
+        let writer = index.writer(50_000_000)?; // 50MB buffer
+
+        Ok(Self {
+            index,
+            reader,
+            writer,
+            schema,
+        })
     }
 
-    pub fn execute(&self, parsed_query: ParsedQuery) -> Result<Vec<SearchResult>, Box<dyn std::error::Error>> {
-        let reader = self.index.reader()?;
-        let searcher = reader.searcher();
+    pub fn add_document(&mut self, title: &str, content: &str) -> Result<()> {
+        let mut doc = Document::new();
         
-        // Convert parsed query to Tantivy query
-        let query = self.build_tantivy_query(&parsed_query)?;
+        let title_field = self.schema.get_field("title").unwrap();
+        let content_field = self.schema.get_field("content").unwrap();
+
+        doc.add_text(title_field, title);
+        doc.add_text(content_field, content);
+
+        self.writer.add_document(doc)?;
+        self.writer.commit()?;
+
+        Ok(())
+    }
+
+    pub fn search(&self, query: ParsedQuery) -> Result<Vec<SearchResult>> {
+        let searcher = self.reader.searcher();
         
-        // Execute search
-        let top_docs = searcher.search(&query, &tantivy::collector::TopDocs::with_limit(10))?;
+        // Build query
+        let query = self.build_query(query)?;
         
+        // Search
+        let top_docs = searcher.search(
+            &query,
+            &TopDocs::with_limit(10),
+        )?;
+
         // Process results
         let mut results = Vec::new();
         for (_score, doc_address) in top_docs {
-            let doc = searcher.doc(doc_address)?;
-            let highlights = self.generate_highlights(&doc, &parsed_query);
+            let retrieved_doc = searcher.doc(doc_address)?;
             
+            let title_field = self.schema.get_field("title").unwrap();
+            let content_field = self.schema.get_field("content").unwrap();
+
+            let title = retrieved_doc
+                .get_first(title_field)
+                .and_then(|v| v.as_text())
+                .unwrap_or("Untitled")
+                .to_string();
+
+            let content = retrieved_doc
+                .get_first(content_field)
+                .and_then(|v| v.as_text())
+                .unwrap_or("")
+                .to_string();
+
             results.push(SearchResult {
-                doc,
+                id: doc_address.to_string(),
+                title,
+                content,
                 score: _score,
-                highlights,
             });
         }
-        
+
         Ok(results)
     }
 
-    fn build_tantivy_query(&self, parsed_query: &ParsedQuery) 
-        -> Result<Box<dyn tantivy::query::Query>, Box<dyn std::error::Error>> {
-        let mut query_builder = tantivy::query::BooleanQuery::new();
-        
-        for token in &parsed_query.tokens {
-            match token {
-                QueryToken::Term(term) => {
-                    let term_query = self.create_term_query(term);
-                    query_builder.add(term_query, tantivy::schema::Occur::Must);
-                }
-                QueryToken::Phrase(phrase) => {
-                    let phrase_query = self.create_phrase_query(phrase);
-                    query_builder.add(phrase_query, tantivy::schema::Occur::Must);
-                }
-                QueryToken::Wildcard(pattern) => {
-                    let wildcard_query = self.create_wildcard_query(pattern);
-                    query_builder.add(wildcard_query, tantivy::schema::Occur::Must);
-                }
-                QueryToken::Fuzzy(term, distance) => {
-                    let fuzzy_query = self.create_fuzzy_query(term, *distance);
-                    query_builder.add(fuzzy_query, tantivy::schema::Occur::Must);
-                }
-                QueryToken::FieldQuery(field, query) => {
-                    let field_query = self.create_field_query(field, query);
-                    query_builder.add(field_query, tantivy::schema::Occur::Must);
-                }
-                // Handle other query tokens...
-                _ => {}
-            }
+    fn build_query(&self, parsed_query: ParsedQuery) -> Result<Box<dyn Query>> {
+        let mut query_builder = BooleanQuery::new();
+        let query_parser = QueryParser::for_index(&self.index, vec![
+            self.schema.get_field("title").unwrap(),
+            self.schema.get_field("content").unwrap(),
+        ]);
+
+        // Add terms
+        for term in parsed_query.terms {
+            let term_query = query_parser.parse_query(&term)
+                .context("Failed to parse term query")?;
+            query_builder.add(term_query, Occur::Must);
         }
-        
+
+        // Add phrases
+        for phrase in parsed_query.phrases {
+            let phrase_query = query_parser.parse_query(&format!("\"{}\"", phrase))
+                .context("Failed to parse phrase query")?;
+            query_builder.add(phrase_query, Occur::Must);
+        }
+
         Ok(Box::new(query_builder))
     }
+}
 
-    fn generate_highlights(&self, doc: &Document, parsed_query: &ParsedQuery) -> Vec<String> {
-        // Implement highlight generation based on query matches
-        Vec::new() // Placeholder
-    }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::TempDir;
 
-    // Helper methods for creating specific query types
-    fn create_term_query(&self, term: &str) -> Box<dyn tantivy::query::Query> {
-        // Implement term query creation
-        Box::new(tantivy::query::TermQuery::new(
-            tantivy::Term::from_field_text(
-                self.index.schema().get_field("content").unwrap(),
-                term
-            ),
-            tantivy::schema::IndexRecordOption::Basic
-        ))
-    }
+    #[test]
+    fn test_search() -> Result<()> {
+        let mut executor = SearchExecutor::new()?;
 
-    fn create_phrase_query(&self, phrase: &str) -> Box<dyn tantivy::query::Query> {
-        // Implement phrase query creation
-        Box::new(tantivy::query::PhraseQuery::new(
-            phrase.split_whitespace()
-                .map(|term| tantivy::Term::from_field_text(
-                    self.index.schema().get_field("content").unwrap(),
-                    term
-                ))
-                .collect()
-        ))
-    }
+        // Add test documents
+        executor.add_document(
+            "Test Document 1",
+            "This is a test document about searching",
+        )?;
+        executor.add_document(
+            "Test Document 2",
+            "Another test document about indexing",
+        )?;
 
-    fn create_wildcard_query(&self, pattern: &str) -> Box<dyn tantivy::query::Query> {
-        // Implement wildcard query creation
-        Box::new(tantivy::query::RegexQuery::new(
-            self.index.schema().get_field("content").unwrap(),
-            pattern.replace("*", ".*")
-        ))
-    }
+        // Search
+        let query = ParsedQuery {
+            terms: vec!["test".to_string()],
+            phrases: vec![],
+        };
 
-    fn create_fuzzy_query(&self, term: &str, distance: u32) -> Box<dyn tantivy::query::Query> {
-        // Implement fuzzy query creation
-        Box::new(tantivy::query::FuzzyTermQuery::new(
-            tantivy::Term::from_field_text(
-                self.index.schema().get_field("content").unwrap(),
-                term
-            ),
-            distance as u8,
-            true
-        ))
-    }
+        let results = executor.search(query)?;
+        assert_eq!(results.len(), 2);
+        assert!(results[0].content.contains("test"));
 
-    fn create_field_query(&self, field: &str, query: &QueryToken) -> Box<dyn tantivy::query::Query> {
-        // Implement field-specific query creation
-        self.create_term_query(&field) // Placeholder
+        Ok(())
     }
 }

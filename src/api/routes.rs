@@ -1,8 +1,12 @@
 // routes.rs
 use warp::{Filter, Reply, Rejection};
 use std::sync::Arc;
+use crate::search::SearchExecutor;
+use crate::api::handlers::SearchQuery;
+use crate::api::handle_search;
+use crate::document::processor::DocumentUpload;
 
-pub fn create_routes(
+pub fn create_routes<IntegratedProcessor>(
     processor: Arc<IntegratedProcessor>,
     search_executor: Arc<SearchExecutor>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {

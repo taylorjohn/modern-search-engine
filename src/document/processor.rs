@@ -1,5 +1,6 @@
+use crate::utils::url::SafeUrl;
 use crate::vector::store::VectorStore;
-use crate::document::{Document, DocumentMetadata, ProcessingStatus};
+use crate::document::{Document, DocumentMetadata, Deserialize, HashMap, Serialize, ProcessingStatus};
 use anyhow::Result;
 use std::sync::Arc;
 use tokio::sync::RwLock;

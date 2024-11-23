@@ -1,5 +1,6 @@
+pub mod types;
 pub mod processor;
-pub mod ingestion;
+pub use self::types::*;
 pub mod store;
 
 use serde::{Deserialize, Serialize};

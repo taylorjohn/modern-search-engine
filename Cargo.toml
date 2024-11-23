@@ -4,45 +4,50 @@ version = "2.0.0"
 edition = "2021"
 
 [dependencies]
-# Server and async
+# Async runtime
 tokio = { version = "1.0", features = ["full"] }
-warp = "0.3"
-futures = "0.3"
 
-# Search and indexing
+# Search engine
 tantivy = "0.19"
 rust-bert = "0.20"
 
-# Document processing
-lopdf = "0.31"
-scraper = "0.17"
-base64 = "0.21"
+warp = "0.3"
 
 # Database
-sqlx = { version = "0.7", features = ["runtime-tokio-native-tls", "postgres", "chrono", "uuid"] }
-postgres = "0.19"
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "chrono", "json", "uuid"] }
 
-# Utils
+# Serialization
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-anyhow = "1.0"
-thiserror = "1.0"
-uuid = { version = "1.4", features = ["v4", "serde"] }
+
+# Time handling
 chrono = { version = "0.4", features = ["serde"] }
-config = "0.13"
+
+num-traits = "0.2"
 
 # Logging and metrics
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-metrics = "0.20"
+metrics = "0.21"
 metrics-exporter-prometheus = "0.11"
 
-# HTML processing
-html2text = "0.4"
-ammonia = "3.3"
+# Utils
+lazy_static = "1.4"
+anyhow = "1.0"
+thiserror = "1.0"
+uuid = { version = "1.0", features = ["v4", "serde"] }
+
+# HTTP client and server
+reqwest = { version = "0.11", default-features = false, features = ["rustls-tls", "json"] }
+axum = { version = "0.6", features = ["headers"] }
+
+# Vector operations
+ndarray = "0.15"
 
 [dev-dependencies]
 tokio-test = "0.4"
-tempfile = "3.8"
-wiremock = "0.5"
 pretty_assertions = "1.0"
+tempfile = "3.8"
+
+[workspace]
+resolver = "2"
