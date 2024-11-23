@@ -1,5 +1,8 @@
 use sha2::{Sha256, Digest};
 use std::time::SystemTime;
+use sqlx::types::chrono::TimeZone;
+use sqlx::types::chrono::DateTime;
+use sqlx::types::Uuid;
 
 pub fn calculate_hash(content: &str) -> String {
     let mut hasher = Sha256::new();

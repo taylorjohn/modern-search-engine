@@ -1,8 +1,7 @@
-use config::{Config, ConfigError, Environment as OtherEnvironment, File};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Settings {
     pub environment: Environment,
     pub server: ServerSettings,
@@ -10,75 +9,70 @@ pub struct Settings {
     pub search: SearchSettings,
     pub processing: ProcessingSettings,
     pub monitoring: MonitoringSettings,
+    pub telemetry: TelemetrySettings,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Environment {
     Development,
     Staging,
     Production,
 }
 
-impl Environment {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Environment::Development => "development",
-            Environment::Staging => "staging",
-            Environment::Production => "production",
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServerSettings {
     pub host: String,
     pub port: u16,
     pub workers: usize,
-    pub request_timeout: u64,
-    pub cors_allowed_origins: Vec<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DatabaseSettings {
-    pub host: String,
-    pub port: u16,
-    pub username: String,
-    pub password: String,
-    pub database_name: String,
-    pub require_ssl: bool,
+    pub url: String,
     pub max_connections: u32,
     pub min_connections: u32,
 }
 
-impl DatabaseSettings {
-    pub fn connection_string(&self) -> String {
-        format!(
-            "postgres://{}:{}@{}:{}/{}{}",
-            self.username,
-            self.password,
-            self.host,
-            self.port,
-            self.database_name,
-            if self.require_ssl { "?sslmode=require" } else { "" }
-        )
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SearchSettings {
     pub max_results: usize,
     pub min_score: f32,
     pub vector_weight: f32,
     pub text_weight: f32,
     pub use_query_expansion: bool,
-    pub cache_ttl: u64,
-    pub timeout: u64,
 }
 
-// src/config/settings.rs
-#[derive(Debug, Deserialize)]
-pub struct Processing {
-    pub max_concurrent_tasks: usize,
-    pub task_timeout_seconds: u64,
-    pub batch_size: usize,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProcessingSettings {
+    pub max_document_size: usize,
+    pub supported_types: Vec<String>,
+    pub processing_threads: usize,
+    pub cleanup_interval: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MonitoringSettings {
+    pub metrics_enabled: bool,
+    pub tracing_enabled: bool,
+    pub metrics_port: u16,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TelemetrySettings {
+    pub log_level: String,
+    pub metrics_enabled: bool,
+    pub tracing_enabled: bool,
+}
+
+impl Settings {
+    pub fn new() -> anyhow::Result<Self> {
+        let config = config::Config::builder()
+            .add_source(config::File::with_name("config/default"))
+            .add_source(config::File::with_name("config/local").required(false))
+            .add_source(config::Environment::with_prefix("APP"))
+            .build()?;
+
+        Ok(config.try_deserialize()?)
+    }
 }

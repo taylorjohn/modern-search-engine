@@ -6,11 +6,13 @@ edition = "2021"
 [dependencies]
 # Async runtime
 tokio = { version = "1.0", features = ["full"] }
+url = "2.4"
 
 # Search engine
 tantivy = "0.19"
 rust-bert = "0.20"
 
+# Web framework
 warp = "0.3"
 
 # Database
@@ -23,7 +25,23 @@ serde_json = "1.0"
 # Time handling
 chrono = { version = "0.4", features = ["serde"] }
 
+# Numeric traits
 num-traits = "0.2"
+
+# Parallel processing
+rayon = "1.8"
+
+# System info
+num_cpus = "1.16"
+
+# HTML sanitization
+ammonia = "3.3"
+
+# Configuration
+config = "0.13"
+
+# Cryptography
+sha2 = "0.10"
 
 # Logging and metrics
 tracing = "0.1"
@@ -37,7 +55,7 @@ anyhow = "1.0"
 thiserror = "1.0"
 uuid = { version = "1.0", features = ["v4", "serde"] }
 
-# HTTP client and server
+# HTTP client
 reqwest = { version = "0.11", default-features = false, features = ["rustls-tls", "json"] }
 axum = { version = "0.6", features = ["headers"] }
 
@@ -48,6 +66,9 @@ ndarray = "0.15"
 tokio-test = "0.4"
 pretty_assertions = "1.0"
 tempfile = "3.8"
+
+[features]
+experimental = []
 
 [workspace]
 resolver = "2"

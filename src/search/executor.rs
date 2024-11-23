@@ -95,7 +95,7 @@ impl SearchExecutor {
                 id: doc_address.to_string(),
                 title,
                 content,
-                score: _score,
+                scores: _score,
             });
         }
 

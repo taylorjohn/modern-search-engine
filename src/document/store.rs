@@ -1,51 +1,33 @@
-use crate::document::{Document, DocumentMetadata as OtherDocumentMetadata};
-use anyhow::Result;
-use sqlx::{PgPool, postgres::PgPoolOptions};
-use std::collections::HashMap;
-use uuid::Uuid;
-use chrono::Utc;
-use serde::{Serialize, Deserialize};
+// src/document/store.rs
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct DocumentMetadata {
-    pub source_type: String,
-    pub author: Option<String>,
-    pub created_at: chrono::DateTime<Utc>,
-    pub last_modified: chrono::DateTime<Utc>,
-    pub language: Option<String>,
-    pub tags: Vec<String>,
-    pub custom_metadata: HashMap<String, String>,
-}
+use crate::document::{Document, DocumentMetadata};
+use anyhow::Result;
+use sqlx::PgPool;
+use std::collections::HashMap;
+use std::sync::RwLock;
+use chrono::Utc;
 
 pub struct DocumentStore {
     pool: PgPool,
-    cache: HashMap<String, Document>,
+    cache: RwLock<HashMap<String, Document>>,
 }
 
 impl DocumentStore {
-    pub async fn new() -> Result<Self> {
-        let database_url = std::env::var("DATABASE_URL")
-            .unwrap_or_else(|_| "postgres://localhost/search_engine".to_string());
-
-        let pool = PgPoolOptions::new()
-            .max_connections(5)
-            .connect(&database_url)
-            .await?;
-
+    pub async fn new(pool: PgPool) -> Result<Self> {
         Ok(Self {
             pool,
-            cache: HashMap::new(),
+            cache: RwLock::new(HashMap::new()),
         })
     }
 
-    pub async fn store_document(&mut self, document: Document) -> Result<String> {
+    pub async fn store_document(&self, document: Document) -> Result<String> {
         // Insert into database
         let id = sqlx::query!(
             r#"
             INSERT INTO documents 
-                (id, title, content, content_type, vector_embedding, metadata)
+                (id, title, content, content_type, vector_embedding, metadata, created_at, updated_at)
             VALUES 
-                ($1, $2, $3, $4, $5, $6)
+                ($1, $2, $3, $4, $5, $6, $7, $8)
             RETURNING id
             "#,
             document.id,
@@ -53,29 +35,36 @@ impl DocumentStore {
             document.content,
             document.content_type,
             document.vector_embedding.as_ref().map(|v| v.as_slice()),
-            serde_json::to_value(&document.metadata)?
+            serde_json::to_value(&document.metadata)?,
+            document.metadata.created_at,
+            document.metadata.last_modified
         )
         .fetch_one(&self.pool)
         .await?
         .id;
 
         // Update cache
-        self.cache.insert(id.clone(), document);
+        if let Ok(mut cache) = self.cache.write() {
+            cache.insert(id.clone(), document);
+        }
 
         Ok(id)
     }
 
     pub async fn get_document(&self, id: &str) -> Result<Option<Document>> {
         // Check cache first
-        if let Some(doc) = self.cache.get(id) {
-            return Ok(Some(doc.clone()));
+        if let Ok(cache) = self.cache.read() {
+            if let Some(doc) = cache.get(id) {
+                return Ok(Some(doc.clone()));
+            }
         }
 
         // Query database
         let record = sqlx::query!(
             r#"
             SELECT 
-                id, title, content, content_type, vector_embedding, metadata
+                id, title, content, content_type, vector_embedding, metadata,
+                created_at, updated_at
             FROM documents
             WHERE id = $1
             "#,
@@ -94,8 +83,8 @@ impl DocumentStore {
                 .unwrap_or_else(|_| DocumentMetadata {
                     source_type: "unknown".to_string(),
                     author: None,
-                    created_at: Utc::now(),
-                    last_modified: Utc::now(),
+                    created_at: r.created_at,
+                    last_modified: r.updated_at,
                     language: None,
                     tags: vec![],
                     custom_metadata: HashMap::new(),
@@ -103,7 +92,7 @@ impl DocumentStore {
         }))
     }
 
-    pub async fn update_document(&mut self, id: &str, document: Document) -> Result<()> {
+    pub async fn update_document(&self, id: &str, document: Document) -> Result<()> {
         // Update database
         sqlx::query!(
             r#"
@@ -123,25 +112,29 @@ impl DocumentStore {
             document.content_type,
             document.vector_embedding.as_ref().map(|v| v.as_slice()),
             serde_json::to_value(&document.metadata)?,
-            Utc::now(),
+            Utc::now()
         )
         .execute(&self.pool)
         .await?;
 
         // Update cache
-        self.cache.insert(id.to_string(), document);
+        if let Ok(mut cache) = self.cache.write() {
+            cache.insert(id.to_string(), document);
+        }
 
         Ok(())
     }
 
-    pub async fn delete_document(&mut self, id: &str) -> Result<()> {
+    pub async fn delete_document(&self, id: &str) -> Result<()> {
         // Delete from database
         sqlx::query!("DELETE FROM documents WHERE id = $1", id)
             .execute(&self.pool)
             .await?;
 
         // Remove from cache
-        self.cache.remove(id);
+        if let Ok(mut cache) = self.cache.write() {
+            cache.remove(id);
+        }
 
         Ok(())
     }
@@ -154,15 +147,19 @@ impl DocumentStore {
     ) -> Result<Vec<Document>> {
         let records = sqlx::query!(
             r#"
-            SELECT 
-                id, title, content, content_type, vector_embedding, metadata
-            FROM documents
-            WHERE 
-                to_tsvector('english', content) @@ plainto_tsquery('english', $1)
-                OR to_tsvector('english', title) @@ plainto_tsquery('english', $1)
-            ORDER BY 
-                ts_rank(to_tsvector('english', content), plainto_tsquery('english', $1)) +
-                ts_rank(to_tsvector('english', title), plainto_tsquery('english', $1)) DESC
+            WITH ranked_docs AS (
+                SELECT 
+                    id, title, content, content_type, vector_embedding, metadata,
+                    created_at, updated_at,
+                    ts_rank(to_tsvector('english', content), plainto_tsquery('english', $1)) +
+                    ts_rank(to_tsvector('english', title), plainto_tsquery('english', $1)) as rank
+                FROM documents
+                WHERE 
+                    to_tsvector('english', content) @@ plainto_tsquery('english', $1)
+                    OR to_tsvector('english', title) @@ plainto_tsquery('english', $1)
+            )
+            SELECT * FROM ranked_docs
+            ORDER BY rank DESC
             LIMIT $2
             OFFSET $3
             "#,
@@ -182,23 +179,52 @@ impl DocumentStore {
                 content_type: r.content_type,
                 vector_embedding: r.vector_embedding.map(|v| v.to_vec()),
                 metadata: serde_json::from_value(r.metadata)
-                    .unwrap_or_else(|_| DocumentMetadata::default()),
+                    .unwrap_or_else(|_| DocumentMetadata {
+                        source_type: "unknown".to_string(),
+                        author: None,
+                        created_at: r.created_at,
+                        last_modified: r.updated_at,
+                        language: None,
+                        tags: vec![],
+                        custom_metadata: HashMap::new(),
+                    }),
             })
             .collect())
+    }
+}
+
+impl Default for DocumentMetadata {
+    fn default() -> Self {
+        Self {
+            source_type: "unknown".to_string(),
+            author: None,
+            created_at: Utc::now(),
+            last_modified: Utc::now(),
+            language: None,
+            tags: Vec::new(),
+            custom_metadata: HashMap::new(),
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use sqlx::postgres::PgPoolOptions;
 
     #[tokio::test]
-    async fn test_document_crud() {
-        let mut store = DocumentStore::new().await.unwrap();
+    async fn test_document_crud() -> Result<()> {
+        // Setup test database connection
+        let pool = PgPoolOptions::new()
+            .max_connections(5)
+            .connect("postgres://localhost/test_db")
+            .await?;
 
-        // Create document
+        let store = DocumentStore::new(pool).await?;
+
+        // Create test document
         let doc = Document {
-            id: Uuid::new_v4().to_string(),
+            id: uuid::Uuid::new_v4().to_string(),
             title: "Test Document".to_string(),
             content: "Test content".to_string(),
             content_type: "text".to_string(),
@@ -207,19 +233,21 @@ mod tests {
         };
 
         // Test store
-        let id = store.store_document(doc.clone()).await.unwrap();
+        let id = store.store_document(doc.clone()).await?;
 
         // Test retrieve
-        let retrieved = store.get_document(&id).await.unwrap().unwrap();
+        let retrieved = store.get_document(&id).await?.unwrap();
         assert_eq!(retrieved.title, doc.title);
 
         // Test update
         let mut updated = retrieved;
         updated.title = "Updated Title".to_string();
-        store.update_document(&id, updated.clone()).await.unwrap();
+        store.update_document(&id, updated.clone()).await?;
 
         // Test delete
-        store.delete_document(&id).await.unwrap();
-        assert!(store.get_document(&id).await.unwrap().is_none());
+        store.delete_document(&id).await?;
+        assert!(store.get_document(&id).await?.is_none());
+
+        Ok(())
     }
 }

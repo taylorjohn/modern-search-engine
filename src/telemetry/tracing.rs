@@ -1,6 +1,6 @@
-ß
-use anyhow::Result;
 
+use anyhow::Result;
+use tracing_subscriber::FmtSubscriber;
 use tracing::{Level, Subscriber};
 
 pub fn get_tracer() -> impl Subscriber {

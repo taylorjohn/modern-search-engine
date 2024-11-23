@@ -1,36 +1,35 @@
-// routes.rs
 use warp::{Filter, Reply, Rejection};
 use std::sync::Arc;
-use crate::search::SearchExecutor;
-use crate::api::handlers::SearchQuery;
-use crate::api::handle_search;
-use crate::document::processor::DocumentUpload;
+use crate::search::engine::SearchEngine;
+use crate::document::processor::DocumentProcessor;
+use crate::api::handlers::{handle_search, handle_document_upload, handle_status_check};
+use crate::api::filters::{with_search_engine, with_document_processor};
 
-pub fn create_routes<IntegratedProcessor>(
-    processor: Arc<IntegratedProcessor>,
-    search_executor: Arc<SearchExecutor>,
+pub fn create_routes(
+    processor: Arc<DocumentProcessor>,
+    search_engine: Arc<SearchEngine>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     let search = warp::path("search")
         .and(warp::get())
-        .and(warp::query::<SearchQuery>())
-        .and(with_search_executor(search_executor.clone()))
+        .and(warp::query())
+        .and(with_search_engine(search_engine.clone()))
         .and_then(handle_search);
 
     let upload = warp::path("documents")
         .and(warp::post())
         .and(warp::body::json())
-        .and(with_processor(processor.clone()))
-        .and_then(handle_upload);
+        .and(with_document_processor(processor.clone()))
+        .and_then(handle_document_upload);
 
     let status = warp::path!("documents" / "status" / String)
         .and(warp::get())
-        .and(with_processor(processor.clone()))
-        .and_then(handle_status);
+        .and(with_document_processor(processor.clone()))
+        .and_then(handle_status_check);
 
     search.or(upload).or(status)
 }
 
-async fn handle_upload(
+async fn handle_upload<IntegratedProcessor>(
     upload: DocumentUpload,
     processor: Arc<IntegratedProcessor>,
 ) -> Result<impl Reply, Rejection> {
@@ -42,7 +41,7 @@ async fn handle_upload(
 
 // main.rs
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> Result<(), E> {
     // Setup search system
     let (processor, search_executor) = setup_search_system().await?;
 
