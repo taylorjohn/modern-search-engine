@@ -3,6 +3,8 @@ use rust_bert::pipelines::sentence_embeddings::{
 };
 use anyhow::Result;
 use std::sync::Arc;
+use rayon::slice::ParallelSlice;
+use rayon::iter::IntoParallelRefIterator;
 
 pub struct EmbeddingGenerator {
     model: Arc<SentenceEmbeddingsModel>,
@@ -47,7 +49,7 @@ impl EmbeddingGenerator {
         let mut results = Vec::new();
         
         // Process in batches to manage memory
-        for chunk in texts.chunks(32) {
+        for chunk in texts.par_chunks(32) {
             let embeddings = self.model.encode(chunk)?;
             results.extend(embeddings);
         }

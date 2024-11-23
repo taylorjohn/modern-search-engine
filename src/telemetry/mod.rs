@@ -1,4 +1,6 @@
-pub mod metrics;
+
+// src/telemetry/mod.rs
+pub use metrics::METRICS;
 pub mod tracing;
 
 use crate::config::Config;
@@ -21,5 +23,5 @@ pub fn shutdown_telemetry() {
     metrics::shutdown_metrics();
 }
 
-pub use metrics::METRICS as metrics;
+pub use metrics::METRICS;
 pub use tracing::get_tracer;

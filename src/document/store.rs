@@ -1,9 +1,21 @@
-use crate::document::{Document, DocumentMetadata};
+use crate::document::{Document, DocumentMetadata as OtherDocumentMetadata};
 use anyhow::Result;
 use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::collections::HashMap;
 use uuid::Uuid;
 use chrono::Utc;
+use serde::{Serialize, Deserialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct DocumentMetadata {
+    pub source_type: String,
+    pub author: Option<String>,
+    pub created_at: chrono::DateTime<Utc>,
+    pub last_modified: chrono::DateTime<Utc>,
+    pub language: Option<String>,
+    pub tags: Vec<String>,
+    pub custom_metadata: HashMap<String, String>,
+}
 
 pub struct DocumentStore {
     pool: PgPool,
@@ -78,7 +90,16 @@ impl DocumentStore {
             content: r.content,
             content_type: r.content_type,
             vector_embedding: r.vector_embedding.map(|v| v.to_vec()),
-            metadata: serde_json::from_value(r.metadata).unwrap_or_default(),
+            metadata: serde_json::from_value(r.metadata)
+                .unwrap_or_else(|_| DocumentMetadata {
+                    source_type: "unknown".to_string(),
+                    author: None,
+                    created_at: Utc::now(),
+                    last_modified: Utc::now(),
+                    language: None,
+                    tags: vec![],
+                    custom_metadata: HashMap::new(),
+                }),
         }))
     }
 
@@ -160,7 +181,8 @@ impl DocumentStore {
                 content: r.content,
                 content_type: r.content_type,
                 vector_embedding: r.vector_embedding.map(|v| v.to_vec()),
-                metadata: serde_json::from_value(r.metadata).unwrap_or_default(),
+                metadata: serde_json::from_value(r.metadata)
+                    .unwrap_or_else(|_| DocumentMetadata::default()),
             })
             .collect())
     }

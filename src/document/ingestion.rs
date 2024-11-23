@@ -1,4 +1,5 @@
 use crate::document::{Document, DocumentMetadata, ProcessingStatus};
+use tantivy::Document as OtherDocument;
 use crate::vector::store::VectorStore;
 use anyhow::Result;
 use std::sync::Arc;

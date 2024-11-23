@@ -1,3 +1,4 @@
+// src/telemetry/metrics.rs
 use lazy_static::lazy_static;
 use metrics::{Counter, Gauge, Histogram, Key, Registry, Unit};
 use metrics_exporter_prometheus::PrometheusBuilder;
@@ -5,7 +6,7 @@ use std::sync::Arc;
 use anyhow::Result;
 
 lazy_static! {
-    pub static ref METRICS: Metrics = Metrics::new();
+    pub(crate) static ref METRICS: Metrics = Metrics::new();
 }
 
 pub struct Metrics {

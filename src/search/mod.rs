@@ -1,4 +1,6 @@
+pub mod types;
 pub mod engine;
+pub use self::types::*;
 pub mod query_parser;
 pub mod executor;
 pub mod scoring;
