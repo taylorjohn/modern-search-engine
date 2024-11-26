@@ -1,9 +1,9 @@
 use sha2::{Sha256, Digest};
-use chrono::{DateTime, Utc, TimeZone};
-use uuid::Uuid;
-use anyhow::Result;
+use std::time::SystemTime;
+use sqlx::types::chrono::TimeZone;
+use sqlx::types::chrono::DateTime;
+use sqlx::types::Uuid;
 
-/// Calculate SHA-256 hash of content
 pub fn calculate_hash(content: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(content.as_bytes());
