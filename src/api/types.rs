@@ -2,7 +2,7 @@
 
 use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
-use uuid::Uuid;
+use chrono::{DateTime, Utc};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SearchRequest {
@@ -21,6 +21,35 @@ fn default_limit() -> usize {
     10
 }
 
+#[derive(Debug, Serialize, Clone)]
+pub struct SearchResult {
+    pub id: String,  // Changed from Uuid to String for easier handling
+    pub title: String,
+    pub content: String,
+    pub scores: SearchScores,
+    pub metadata: SearchMetadata,
+    pub highlights: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Clone)]
+pub struct SearchScores {
+    pub text_score: f32,
+    pub vector_score: f32,
+    pub final_score: f32,
+}
+
+#[derive(Debug, Serialize, Clone)]
+pub struct SearchMetadata {
+    pub source_type: String,
+    pub content_type: String,
+    pub author: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub last_modified: DateTime<Utc>,
+    pub word_count: usize,
+    pub tags: Vec<String>,
+    pub custom_metadata: HashMap<String, serde_json::Value>,
+}
+
 #[derive(Debug, Serialize)]
 pub struct SearchResponse {
     pub query: QueryInfo,
@@ -33,35 +62,7 @@ pub struct QueryInfo {
     pub original: String,
     pub expanded: String,
     pub vector_query: bool,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct SearchResult {
-    pub id: Uuid,
-    pub title: String,
-    pub content: String,
-    pub scores: SearchScores,
-    pub metadata: SearchMetadata,
-    pub highlights: Vec<String>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct SearchScores {
-    pub text_score: f32,
-    pub vector_score: f32,
-    pub final_score: f32,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct SearchMetadata {
-    pub source_type: String,
-    pub author: Option<String>, 
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub word_count: usize,
-    pub content_type: String,
-    pub last_modified: chrono::DateTime<chrono::Utc>,
-    pub tags: Vec<String>,
-    pub custom_metadata: HashMap<String, serde_json::Value>,
+    pub fields: Vec<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -73,12 +74,25 @@ pub struct SearchAnalytics {
     pub vector_query: bool,
 }
 
-#[derive(Debug)]
-pub struct ApiError {
-    pub code: String,
-    pub message: String,
-    pub details: Option<serde_json::Value>,
+#[derive(Debug, thiserror::Error)]
+pub enum ApiError {
+    #[error("Database error: {0}")]
+    Database(String),
+    
+    #[error("Not found: {0}")]
+    NotFound(String),
+    
+    #[error("Invalid request: {0}")]
+    InvalidRequest(String),
+    
+    #[error("Processing error: {0}")]
+    Processing(String),
+    
+    #[error("Internal error: {0}")]
+    Internal(String),
 }
+
+impl warp::reject::Reject for ApiError {}
 
 #[derive(Debug, Serialize)]
 pub struct ApiResponse<T> {

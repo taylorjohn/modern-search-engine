@@ -1,28 +1,22 @@
 use anyhow::Result;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{info, error};
+use tracing::{error, info};
 use warp::Filter;
 
 use modern_search_engine::{
-    api::{
-        routes, 
-        error::handle_rejection,
-        types::ApiError,
-    },
+    api::{error::handle_rejection, routes, types::ApiError},
     config::{Config, SearchConfig},
+    document::{processor::DocumentProcessor, store::DocumentStore},
     search::engine::SearchEngine,
-    document::{
-        processor::DocumentProcessor,
-        store::DocumentStore,
-    },
-    vector::store::VectorStore,
     telemetry::init_telemetry,
+    vector::store::VectorStore,
 };
 
 async fn init_database() -> Result<()> {
-    let database_url = std::env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "postgres://postgres:postgres@localhost:5432/modern_search".to_string());
+    let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
+        "postgres://postgres:postgres@localhost:5432/modern_search".to_string()
+    });
 
     let pool = sqlx::postgres::PgPoolOptions::new()
         .max_connections(5)
@@ -36,7 +30,9 @@ async fn init_database() -> Result<()> {
     Ok(())
 }
 
-pub async fn setup_search_system(config: &Config) -> Result<(Arc<DocumentProcessor>, Arc<SearchEngine>)> {
+pub async fn setup_search_system(
+    config: &Config,
+) -> Result<(Arc<DocumentProcessor>, Arc<SearchEngine>)> {
     // Initialize document store
     let document_store = Arc::new(RwLock::new(DocumentStore::new().await?));
     info!("Document store initialized");
@@ -80,11 +76,8 @@ async fn main() -> Result<()> {
     let (document_processor, search_engine) = setup_search_system(&config).await?;
 
     // Setup API routes
-    let routes = routes::create_routes(
-        search_engine.clone(),
-        document_processor.clone(),
-    )
-    .recover(handle_rejection);
+    let routes = routes::create_routes(search_engine.clone(), document_processor.clone())
+        .recover(handle_rejection);
 
     // Start cleanup task
     let cleanup_interval = std::time::Duration::from_secs(3600); // 1 hour
@@ -101,10 +94,8 @@ async fn main() -> Result<()> {
     // Start server
     let addr = ([127, 0, 0, 1], config.port).into();
     info!("Server listening on http://{}", addr);
-    
-    warp::serve(routes)
-        .run(addr)
-        .await;
+
+    warp::serve(routes).run(addr).await;
 
     Ok(())
 }

@@ -1,14 +1,12 @@
-// src/api/handlers.rs
-
-use crate::search::engine::SearchEngine;
-use crate::search::types::{SearchRequest, SearchResponse, SearchResult};
-use crate::document::processor::DocumentProcessor;
-use crate::api::error::ApiError;
-use serde::{Deserialize, Serialize};
-use warp::{Reply, Rejection};
 use std::sync::Arc;
+use warp::{Reply, Rejection, Filter};
+use serde::{Serialize, Deserialize};
+use crate::search::engine::SearchEngine;
+use crate::document::{ProcessingStatus, Document, DocumentMetadata};
+use crate::document::processor::{DocumentProcessor, DocumentUpload};
+use crate::api::error::ApiError;
 use uuid::Uuid;
-use std::convert::Infallible;
+use anyhow::Result;
 
 #[derive(Debug, Deserialize)]
 pub struct SearchQuery {
@@ -18,106 +16,193 @@ pub struct SearchQuery {
     #[serde(default)]
     pub offset: usize,
     #[serde(default)]
-    pub fields: Option<Vec<String>>,
+    pub use_vector: bool,
 }
 
 fn default_limit() -> usize {
     10
 }
 
+#[derive(Debug, Serialize)]
+pub struct SearchResponse {
+    pub query: String,
+    pub results: Vec<crate::search::types::SearchResult>,
+    pub total: usize,
+    pub took_ms: u64,
+}
+
 pub async fn handle_search(
     query: SearchQuery,
-    search_engine: Arc<SearchEngine>,
+    engine: Arc<SearchEngine>,
 ) -> Result<impl Reply, Rejection> {
-    let search_result = search_engine
-        .search(
-            &query.q,
-            Some(query.limit),
-            Some(query.offset),
-            query.fields.as_deref(),
-        )
-        .await
-        .map_err(|e| warp::reject::custom(ApiError::SearchError(e)))?;
-
-    Ok(warp::reply::json(&search_result))
-}
-
-pub async fn handle_document_upload(
-    processor: Arc<DocumentProcessor>,
-    document: DocumentUpload,
-) -> Result<impl Reply, Rejection> {
-    let processing_id = Uuid::new_v4();
+    let start = std::time::Instant::now();
     
-    let result = processor
-        .process_document(document)
-        .await
-        .map_err(|e| warp::reject::custom(ApiError::ProcessingError(e)))?;
+    let search_response = engine.search(
+        &query.q,
+        Some(query.limit),
+        Some(query.offset),
+    )
+    .await
+    .map_err(|e| ApiError::InternalError(e))?;
 
-    Ok(warp::reply::json(&ProcessingResponse {
-        id: processing_id.to_string(),
-        status: "completed".to_string(),
-        document: Some(result),
-    }))
+    let response = SearchResponse {
+        query: query.q,
+        total: search_response.results.len(),
+        took_ms: start.elapsed().as_millis() as u64,
+        results: search_response.results,
+    };
+
+    Ok(warp::reply::json(&response))
 }
 
-pub async fn handle_status_check(
-    processor: Arc<DocumentProcessor>,
-    processing_id: String,
-) -> Result<impl Reply, Rejection> {
-    let status = processor
-        .get_processing_status(&processing_id)
-        .await
-        .map_err(|e| warp::reject::custom(ApiError::StatusError(e)))?;
-
-    Ok(warp::reply::json(&status))
+#[derive(Debug, Deserialize)]
+pub struct DocumentUploadRequest {
+    pub content: String,
+    pub title: Option<String>,
+    pub content_type: String,
+    pub metadata: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Serialize)]
-pub struct ProcessingResponse<T> {
-    id: String,
-    status: String,
-    document: Option<T>,
+pub struct DocumentUploadResponse {
+    pub id: Uuid,
+    pub status: String,
+    pub processing_id: Uuid,
 }
 
-pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
-    let (code, response) = if let Some(e) = err.find::<ApiError>() {
-        match e {
-            ApiError::SearchError(_) => (
-                warp::http::StatusCode::BAD_REQUEST,
-                e.to_response(),
-            ),
-            ApiError::ProcessingError(_) => (
-                warp::http::StatusCode::BAD_REQUEST,
-                e.to_response(),
-            ),
-            ApiError::StatusError(_) => (
-                warp::http::StatusCode::NOT_FOUND,
-                e.to_response(),
-            ),
-            _ => (
-                warp::http::StatusCode::INTERNAL_SERVER_ERROR,
-                e.to_response(),
-            ),
-        }
-    } else if err.is_not_found() {
-        (
-            warp::http::StatusCode::NOT_FOUND,
-            ErrorResponse {
-                code: "NOT_FOUND".to_string(),
-                message: "Not Found".to_string(),
-                details: None,
-            },
-        )
-    } else {
-        (
-            warp::http::StatusCode::INTERNAL_SERVER_ERROR,
-            ErrorResponse {
-                code: "INTERNAL_ERROR".to_string(),
-                message: "Internal Server Error".to_string(),
-                details: None,
-            },
-        )
+pub async fn handle_document_upload(
+    request: DocumentUploadRequest,
+    processor: Arc<DocumentProcessor>,
+) -> Result<impl Reply, Rejection> {
+    // Convert metadata to DocumentMetadata
+    let metadata = match request.metadata {
+        Some(value) => serde_json::from_value(value)
+            .map_err(|e| ApiError::InvalidRequest(format!("Invalid metadata: {}", e)))?,
+        None => DocumentMetadata::default(),
     };
 
-    Ok(warp::reply::with_status(warp::reply::json(&response), code))
+    // Create document upload request
+    let upload = DocumentUpload::Text {
+        content: request.content,
+        title: request.title.unwrap_or_else(|| "Untitled".to_string()),
+        metadata: Some(metadata.custom_metadata),
+    };
+
+    let processing_result = processor
+        .process_document(upload)
+        .await
+        .map_err(|e| ApiError::ProcessingError(e))?;
+
+    let response = DocumentUploadResponse {
+        id: processing_result.id,
+        status: "processing".to_string(),
+        processing_id: processing_result.processing_id,
+    };
+
+    Ok(warp::reply::with_status(
+        warp::reply::json(&response),
+        warp::http::StatusCode::ACCEPTED,
+    ))
+}
+
+#[derive(Debug, Serialize)]
+pub struct ProcessingStatusResponse {
+    pub id: Uuid,
+    pub status: String,
+    pub progress: f32,
+    pub message: Option<String>,
+    pub result: Option<serde_json::Value>,
+}
+
+pub async fn handle_status_check(
+    processing_id: String,
+    processor: Arc<DocumentProcessor>,
+) -> Result<impl Reply, Rejection> {
+    let id = Uuid::parse_str(&processing_id)
+        .map_err(|_| ApiError::InvalidRequest("Invalid processing ID".to_string()))?;
+
+    let status = processor
+        .get_processing_status(&id)
+        .await
+        .map_err(|e| ApiError::ProcessingError(e))?;
+
+    let response = match status {
+        ProcessingStatus::Pending => ProcessingStatusResponse {
+            id,
+            status: "pending".to_string(),
+            progress: 0.0,
+            message: None,
+            result: None,
+        },
+        ProcessingStatus::Processing(progress) => ProcessingStatusResponse {
+            id,
+            status: "processing".to_string(),
+            progress,
+            message: None,
+            result: None,
+        },
+        ProcessingStatus::Completed(doc) => ProcessingStatusResponse {
+            id,
+            status: "completed".to_string(),
+            progress: 100.0,
+            message: None,
+            result: Some(serde_json::to_value(doc)?),
+        },
+        ProcessingStatus::Failed(error) => ProcessingStatusResponse {
+            id,
+            status: "failed".to_string(),
+            progress: 0.0,
+            message: Some(error),
+            result: None,
+        },
+    };
+
+    Ok(warp::reply::json(&response))
+}
+
+pub fn json_body<T>() -> impl Filter<Extract = (T,), Error = Rejection> + Clone 
+where
+    T: for<'de> Deserialize<'de> + Send,
+{
+    use warp::Filter;
+    warp::body::content_length_limit(1024 * 1024 * 10)
+        .and(warp::body::json())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use warp::test::request;
+
+    #[tokio::test]
+    async fn test_search_handler() {
+        // Mock dependencies
+        let engine = Arc::new(SearchEngine::mock());
+        
+        // Create test query
+        let query = SearchQuery {
+            q: "test".to_string(),
+            limit: 10,
+            offset: 0,
+            use_vector: false,
+        };
+
+        // Make request
+        let response = handle_search(query, engine)
+            .await
+            .expect("Search should succeed");
+
+        // Verify response
+        assert!(response.status().is_success());
+    }
+
+    #[tokio::test]
+    async fn test_upload_handler() {
+        // TODO: Implement test
+    }
+
+    #[tokio::test]
+    async fn test_status_handler() {
+        // TODO: Implement test
+    }
 }

@@ -1,17 +1,17 @@
-// src/search/executor.rs
 use std::sync::Arc;
 use anyhow::{Result, Context};
 use tantivy::{
     Document, Index, IndexReader, IndexWriter, 
     collector::TopDocs,
     query::{Query, QueryParser, BooleanQuery, Occur},
-    schema::{Schema, STORED, TEXT, INDEXED},
-    Score,
+    schema::{Schema, STORED, TEXT},
+    snippet::{Snippet, SnippetGenerator},
 };
-use crate::search::{
-    types::SearchResult,
-    query_parser::ParsedQuery,
-};
+use chrono::Utc;
+use uuid::Uuid;
+use crate::search::types::{SearchResult, SearchScores, SearchMetadata};
+use crate::search::query_parser::ParsedQuery;
+use std::collections::HashMap;
 
 pub struct SearchExecutor {
     index: Index,
@@ -61,6 +61,8 @@ impl SearchExecutor {
 
     pub fn search(&self, query: ParsedQuery) -> Result<Vec<SearchResult>> {
         let searcher = self.reader.searcher();
+        let title_field = self.schema.get_field("title").unwrap();
+        let content_field = self.schema.get_field("content").unwrap();
         
         // Build query
         let query = self.build_query(query)?;
@@ -71,14 +73,18 @@ impl SearchExecutor {
             &TopDocs::with_limit(10),
         )?;
 
+        // Setup snippet generator
+        let snippet_generator = SnippetGenerator::create(
+            &searcher,
+            &query,
+            content_field,
+        )?;
+
         // Process results
         let mut results = Vec::new();
-        for (_score, doc_address) in top_docs {
+        for (score, doc_address) in top_docs {
             let retrieved_doc = searcher.doc(doc_address)?;
             
-            let title_field = self.schema.get_field("title").unwrap();
-            let content_field = self.schema.get_field("content").unwrap();
-
             let title = retrieved_doc
                 .get_first(title_field)
                 .and_then(|v| v.as_text())
@@ -91,11 +97,30 @@ impl SearchExecutor {
                 .unwrap_or("")
                 .to_string();
 
+            // Generate highlights
+            let snippet = snippet_generator.snippet_from_doc(&retrieved_doc);
+            let highlights = vec![snippet.to_html()];
+
             results.push(SearchResult {
-                id: doc_address.to_string(),
+                id: Uuid::new_v4(), // Generate new UUID for each result
                 title,
                 content,
-                scores: _score,
+                scores: SearchScores {
+                    text_score: score,
+                    vector_score: 0.0, // Text-only search
+                    final_score: score,
+                },
+                highlights,
+                metadata: SearchMetadata {
+                    source_type: "document".to_string(),
+                    content_type: "text/plain".to_string(),
+                    author: None,
+                    created_at: Utc::now(),
+                    last_modified: Utc::now(),
+                    word_count: content.split_whitespace().count(),
+                    tags: Vec::new(),
+                    custom_metadata: HashMap::new(),
+                },
             });
         }
 
@@ -103,34 +128,34 @@ impl SearchExecutor {
     }
 
     fn build_query(&self, parsed_query: ParsedQuery) -> Result<Box<dyn Query>> {
-        let mut query_builder = BooleanQuery::new();
         let query_parser = QueryParser::for_index(&self.index, vec![
             self.schema.get_field("title").unwrap(),
             self.schema.get_field("content").unwrap(),
         ]);
 
-        // Add terms
-        for term in parsed_query.terms {
-            let term_query = query_parser.parse_query(&term)
+        let mut subqueries = Vec::new();
+
+        // Add term queries
+        for term in parsed_query.terms.iter() {
+            let term_query = query_parser.parse_query(term)
                 .context("Failed to parse term query")?;
-            query_builder.add(term_query, Occur::Must);
+            subqueries.push((Occur::Must, term_query));
         }
 
-        // Add phrases
-        for phrase in parsed_query.phrases {
+        // Add phrase queries
+        for phrase in parsed_query.phrases.iter() {
             let phrase_query = query_parser.parse_query(&format!("\"{}\"", phrase))
                 .context("Failed to parse phrase query")?;
-            query_builder.add(phrase_query, Occur::Must);
+            subqueries.push((Occur::Must, phrase_query));
         }
 
-        Ok(Box::new(query_builder))
+        Ok(Box::new(BooleanQuery::new(subqueries)))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
 
     #[test]
     fn test_search() -> Result<()> {
@@ -155,6 +180,7 @@ mod tests {
         let results = executor.search(query)?;
         assert_eq!(results.len(), 2);
         assert!(results[0].content.contains("test"));
+        assert!(!results[0].highlights.is_empty());
 
         Ok(())
     }
