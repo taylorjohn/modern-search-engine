@@ -1,12 +1,12 @@
 use std::sync::Arc;
-use warp::{Reply, Rejection, Filter};
+use warp::{Reply, Rejection};
 use serde::{Serialize, Deserialize};
 use crate::search::engine::SearchEngine;
-use crate::document::{ProcessingStatus, Document, DocumentMetadata};
+use crate::document::{Document, DocumentMetadata, ProcessingStatus};
 use crate::document::processor::{DocumentProcessor, DocumentUpload};
 use crate::api::error::ApiError;
+use crate::search::types::{SearchResult, SearchDocumentResult};
 use uuid::Uuid;
-use anyhow::Result;
 
 #[derive(Debug, Deserialize)]
 pub struct SearchQuery {
@@ -26,7 +26,7 @@ fn default_limit() -> usize {
 #[derive(Debug, Serialize)]
 pub struct SearchResponse {
     pub query: String,
-    pub results: Vec<crate::search::types::SearchResult>,
+    pub results: Vec<SearchDocumentResult>,
     pub total: usize,
     pub took_ms: u64,
 }
@@ -81,26 +81,23 @@ pub async fn handle_document_upload(
         None => DocumentMetadata::default(),
     };
 
-    // Create document upload request
     let upload = DocumentUpload::Text {
         content: request.content,
         title: request.title.unwrap_or_else(|| "Untitled".to_string()),
         metadata: Some(metadata.custom_metadata),
     };
 
-    let processing_result = processor
+    let processing_id = processor
         .process_document(upload)
         .await
         .map_err(|e| ApiError::ProcessingError(e))?;
 
-    let response = DocumentUploadResponse {
-        id: processing_result.id,
-        status: "processing".to_string(),
-        processing_id: processing_result.processing_id,
-    };
-
     Ok(warp::reply::with_status(
-        warp::reply::json(&response),
+        warp::reply::json(&DocumentUploadResponse {
+            id: Uuid::new_v4(), // Generate temporary ID
+            status: "processing".to_string(),
+            processing_id,
+        }),
         warp::http::StatusCode::ACCEPTED,
     ))
 }
@@ -111,7 +108,7 @@ pub struct ProcessingStatusResponse {
     pub status: String,
     pub progress: f32,
     pub message: Option<String>,
-    pub result: Option<serde_json::Value>,
+    pub result: Option<Document>,
 }
 
 pub async fn handle_status_check(
@@ -122,7 +119,7 @@ pub async fn handle_status_check(
         .map_err(|_| ApiError::InvalidRequest("Invalid processing ID".to_string()))?;
 
     let status = processor
-        .get_processing_status(&id)
+        .get_processing_status(id)
         .await
         .map_err(|e| ApiError::ProcessingError(e))?;
 
@@ -141,12 +138,18 @@ pub async fn handle_status_check(
             message: None,
             result: None,
         },
-        ProcessingStatus::Completed(doc) => ProcessingStatusResponse {
-            id,
-            status: "completed".to_string(),
-            progress: 100.0,
-            message: None,
-            result: Some(serde_json::to_value(doc)?),
+        ProcessingStatus::Completed(doc_id) => {
+            let doc = processor.get_document(doc_id)
+                .await
+                .map_err(|e| ApiError::ProcessingError(e))?;
+            
+            ProcessingStatusResponse {
+                id,
+                status: "completed".to_string(),
+                progress: 100.0,
+                message: None,
+                result: Some(doc),
+            }
         },
         ProcessingStatus::Failed(error) => ProcessingStatusResponse {
             id,

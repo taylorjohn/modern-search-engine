@@ -53,14 +53,54 @@ pub async fn init_with_config(config: SearchEngineConfig) -> Result<()> {
 // Public re-exports
 pub use search::engine::SearchEngine;
 pub use document::processor::DocumentProcessor;
+pub use document::Document;  // Direct document type export
+pub use document::DocumentMetadata;  // Direct metadata type export
 pub use vector::store::VectorStore;
+pub use search::types::SearchOptions;
+pub use api::error::ApiError;
 
-// Common types
+/// Common types prelude for convenient imports
 pub mod prelude {
-    pub use crate::search::types::{SearchResult, SearchOptions};
-    pub use crate::document::types::{Document, DocumentMetadata};
+    pub use crate::search::types::{SearchResult, SearchOptions, SearchResponse};
+    pub use crate::document::{Document, DocumentMetadata, DocumentUpload};
     pub use crate::vector::types::VectorQuery;
-    pub use crate::api::types::{ApiResponse, ApiError};
+    pub use crate::api::error::{ApiError, ApiResponse};
+    
+    // Processing types
+    pub use crate::document::processor::{ProcessingStatus, ProcessingTask};
+    
+    // Search configuration
+    pub use crate::search::engine::SearchConfig;
+    pub use crate::config::Settings;
+    
+    // Database types
+    pub use sqlx::PgPool;
+    pub use uuid::Uuid;
+    
+    // Common result type
+    pub use anyhow::Result;
+}
+
+/// Query processing and analysis
+pub mod query {
+    pub use crate::search::query::{QueryParser, ParsedQuery};
+    pub use crate::search::analysis::{analyze_query, QueryAnalysis};
+}
+
+/// Document processing and storage
+pub mod processing {
+    pub use crate::document::processor::{
+        DocumentProcessor, ProcessingStatus, ProcessingTask,
+        DocumentTypeProcessor, ProcessingResult,
+    };
+    pub use crate::document::store::DocumentStore;
+}
+
+/// Vector operations and similarity search
+pub mod vectors {
+    pub use crate::vector::store::VectorStore;
+    pub use crate::vector::embeddings::{EmbeddingGenerator, EmbeddingModel};
+    pub use crate::vector::types::{VectorQuery, VectorSearchResult};
 }
 
 #[cfg(test)]
@@ -83,6 +123,16 @@ mod tests {
         };
         assert!(init_with_config(config).await.is_ok());
     }
+    
+    #[test]
+    fn test_config_defaults() {
+        let config = SearchEngineConfig::default();
+        assert_eq!(config.max_results, 100);
+        assert_eq!(config.min_score, 0.1);
+        assert!(config.use_vector_search);
+        assert_eq!(config.vector_weight, 0.6);
+        assert_eq!(config.text_weight, 0.4);
+    }
 }
 
 /// Feature gate for experimental features
@@ -90,9 +140,9 @@ mod tests {
 pub mod experimental {
     //! Experimental features that are not yet stable
     
-    pub mod semantic_search;
-    pub mod query_understanding;
-    pub mod auto_categorization;
+    pub use crate::search::semantic::SemanticSearch;
+    pub use crate::search::understanding::QueryUnderstanding;
+    pub use crate::document::categorization::AutoCategorization;
 }
 
 /// Documentation examples

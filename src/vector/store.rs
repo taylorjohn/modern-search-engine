@@ -1,11 +1,7 @@
-// src/vector/store.rs
 use crate::search::types::{SearchResult, SearchScores, SearchMetadata};
 use crate::document::Document;
 use anyhow::{Result, Context};
 use sqlx::PgPool;
-use uuid::Uuid;
-use std::collections::HashMap;
-use chrono::Utc;
 
 pub struct VectorStore {
     pool: PgPool,
@@ -14,29 +10,55 @@ pub struct VectorStore {
 
 impl VectorStore {
     pub async fn new(pool: PgPool, dimension: usize) -> Result<Self> {
-        // Verify vector extension is enabled
-        sqlx::query!("CREATE EXTENSION IF NOT EXISTS vector")
+        // Initialize extensions sequentially
+        sqlx::query!(r#"DO $$ BEGIN CREATE EXTENSION IF NOT EXISTS vector; EXCEPTION WHEN OTHERS THEN NULL; END $$"#)
             .execute(&pool)
-            .await?;
+            .await
+            .context("Failed to create vector extension")?;
+
+        sqlx::query!(r#"DO $$ BEGIN CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; EXCEPTION WHEN OTHERS THEN NULL; END $$"#)
+            .execute(&pool)
+            .await
+            .context("Failed to create UUID extension")?;
+
+        sqlx::query!(
+            r#"
+            CREATE OR REPLACE FUNCTION vector_cosine_similarity(a vector, b vector) 
+            RETURNS float8 AS $$
+            SELECT 1 - (a <=> b)::float8;
+            $$ LANGUAGE SQL IMMUTABLE STRICT PARALLEL SAFE;
+            "#
+        )
+        .execute(&pool)
+        .await
+        .context("Failed to create similarity function")?;
 
         Ok(Self { pool, dimension })
     }
+}
 
-    pub async fn generate_embedding(&self, text: &str) -> Result<Vec<f32>> {
+    pub async fn generate_embedding(&self, _text: &str) -> Result<Vec<f32>> {
         // TODO: Implement actual embedding generation
-        // For now, return a dummy vector of the correct dimension
         Ok(vec![0.1; self.dimension])
     }
 
     pub async fn add_document(&self, doc: &Document) -> Result<()> {
         if let Some(embedding) = &doc.vector_embedding {
+            if embedding.len() != self.dimension {
+                return Err(anyhow::anyhow!(
+                    "Vector dimension mismatch: expected {}, got {}",
+                    self.dimension,
+                    embedding.len()
+                ));
+            }
+
             sqlx::query!(
                 r#"
                 UPDATE documents 
-                SET vector_embedding = $1::vector
+                SET vector_embedding = $1::float4[]
                 WHERE id = $2
                 "#,
-                &embedding[..] as &[f32],
+                embedding.as_slice(),
                 doc.id,
             )
             .execute(&self.pool)
@@ -47,7 +69,7 @@ impl VectorStore {
     }
 
     pub async fn search(&self, query_vector: &[f32], limit: usize) -> Result<Vec<SearchResult>> {
-        let results = sqlx::query!(
+        sqlx::query!(
             r#"
             SELECT 
                 d.id,
@@ -55,25 +77,25 @@ impl VectorStore {
                 d.content,
                 d.content_type,
                 d.metadata,
-                d.author,
                 d.created_at,
                 d.updated_at,
-                1 - (d.vector_embedding <-> $1::vector(384)) as similarity
+                1 - (d.vector_embedding::float4[] <=> $1::float4[]) as similarity
             FROM documents d
             WHERE d.vector_embedding IS NOT NULL
-            ORDER BY d.vector_embedding <-> $1::vector(384)
+            ORDER BY d.vector_embedding::float4[] <=> $1::float4[]
             LIMIT $2
             "#,
             query_vector as &[f32],
             limit as i64
         )
         .fetch_all(&self.pool)
-        .await?;
-
-        let mut search_results = Vec::new();
-        for r in results {
-            let content = r.content.clone();
-            search_results.push(SearchResult {
+        .await?
+        .into_iter()
+        .map(|r| {
+            let metadata = serde_json::from_value(r.metadata.unwrap_or_default())
+                .unwrap_or_default();
+            
+            Ok(SearchResult {
                 id: r.id,
                 title: r.title,
                 content: r.content,
@@ -85,19 +107,69 @@ impl VectorStore {
                 metadata: SearchMetadata {
                     source_type: "document".to_string(),
                     content_type: r.content_type,
-                    author: r.author,
+                    author: None,
                     created_at: r.created_at,
                     last_modified: r.updated_at,
-                    word_count: content.split_whitespace().count(),
+                    word_count: r.content.split_whitespace().count(),
                     tags: Vec::new(),
-                    custom_metadata: r.metadata
-                        .map(|m| serde_json::from_value(m).unwrap_or_default())
-                        .unwrap_or_default(),
+                    custom_metadata: serde_json::Map::new(),
                 },
                 highlights: Vec::new(),
-            });
-        }
-
-        Ok(search_results)
+            })
+        })
+        .collect()
     }
-}
+
+    pub async fn text_search(&self, query: &str, limit: usize, offset: usize) -> Result<Vec<SearchResult>> {
+        sqlx::query!(
+            r#"
+            SELECT 
+                d.id,
+                d.title,
+                d.content,
+                d.content_type,
+                d.metadata,
+                d.created_at,
+                d.updated_at,
+                ts_rank(to_tsvector('english', d.content), plainto_tsquery('english', $1)) as rank
+            FROM documents d
+            WHERE to_tsvector('english', d.content) @@ plainto_tsquery('english', $1)
+            ORDER BY rank DESC
+            LIMIT $2
+            OFFSET $3
+            "#,
+            query,
+            limit as i64,
+            offset as i64
+        )
+        .fetch_all(&self.pool)
+        .await?
+        .into_iter()
+        .map(|r| {
+            let metadata = serde_json::from_value(r.metadata.unwrap_or_default())
+                .unwrap_or_default();
+            
+            Ok(SearchResult {
+                id: r.id,
+                title: r.title,
+                content: r.content,
+                scores: SearchScores {
+                    text_score: r.rank.unwrap_or(0.0) as f32,
+                    vector_score: 0.0,
+                    final_score: r.rank.unwrap_or(0.0) as f32,
+                },
+                metadata: SearchMetadata {
+                    source_type: "document".to_string(),
+                    content_type: r.content_type,
+                    author: None,
+                    created_at: r.created_at,
+                    last_modified: r.updated_at,
+                    word_count: r.content.split_whitespace().count(),
+                    tags: Vec::new(),
+                    custom_metadata: serde_json::Map::new(),
+                },
+                highlights: Vec::new(),
+            })
+        })
+        .collect()
+    }

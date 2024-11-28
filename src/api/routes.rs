@@ -46,7 +46,7 @@ pub fn create_routes(
 }
 
 // Create helper function for setting up search system
-pub async fn setup_search_system() -> Result<(Arc<DocumentProcessor>, Arc<SearchEngine>)> {
+pub async fn setup_search_system<T>() -> Result<(Arc<DocumentProcessor>, Arc<SearchEngine>)> {
     use crate::config::Config;
     use sqlx::postgres::PgPoolOptions;
 
@@ -60,12 +60,12 @@ pub async fn setup_search_system() -> Result<(Arc<DocumentProcessor>, Arc<Search
         .await?;
 
     // Initialize vector store
-    let vector_store = Arc::new(tokio::sync::RwLock::new(
+    let vector_store = Arc::<T>::new(tokio::sync::RwLock::new(
         crate::vector::store::VectorStore::new(pool.clone(), 384).await?
     ));
 
     // Create search engine
-    let search_engine = Arc::new(SearchEngine::new(
+    let search_engine = Arc::<T>::new(SearchEngine::new(
         vector_store.clone(),
         config.search.clone(),
     )?);
