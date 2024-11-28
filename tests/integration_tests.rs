@@ -1,24 +1,20 @@
 use modern_search_engine::{
-    config::Config,
-    search::engine::SearchEngine,
-    document::processor::DocumentProcessor,
+    config::Config, document::processor::DocumentProcessor, search::engine::SearchEngine,
     vector::store::VectorStore,
 };
 
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use wiremock::{MockServer, Mock, ResponseTemplate};
 use wiremock::matchers::{method, path};
+use wiremock::{Mock, MockServer, ResponseTemplate};
 
 async fn setup_test_system() -> (Arc<SearchEngine>, Arc<DocumentProcessor>) {
     let config = Config::default();
     let vector_store = Arc::new(RwLock::new(VectorStore::new(&config).await.unwrap()));
     let search_engine = Arc::new(SearchEngine::new(vector_store.clone(), &config.search).unwrap());
-    let document_processor = Arc::new(DocumentProcessor::new(
-        vector_store,
-        search_engine.clone(),
-        &config.processor,
-    ).unwrap());
+    let document_processor = Arc::new(
+        DocumentProcessor::new(vector_store, search_engine.clone(), &config.processor).unwrap(),
+    );
 
     (search_engine, document_processor)
 }
@@ -53,26 +49,28 @@ async fn test_external_api_integration() {
     // Mock external API responses
     Mock::given(method("GET"))
         .and(path("/external/document"))
-        .respond_with(ResponseTemplate::new(200)
-            .set_body_json(json!({
-                "content": "External document content",
-                "metadata": {
-                    "author": "External Author"
-                }
-            })))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "content": "External document content",
+            "metadata": {
+                "author": "External Author"
+            }
+        })))
         .mount(&mock_server)
         .await;
 
     // Test external document fetching and processing
     let (_, document_processor) = setup_test_system().await;
-    
+
     let external_doc = DocumentUpload::Html {
         content: format!("{}/external/document", mock_server.uri()),
         url: Some("https://example.com".to_string()),
         metadata: None,
     };
 
-    let result = document_processor.process_document(external_doc).await.unwrap();
+    let result = document_processor
+        .process_document(external_doc)
+        .await
+        .unwrap();
     assert!(result.content.contains("External document content"));
 }
 

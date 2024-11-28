@@ -1,4 +1,6 @@
+pub mod types;
 pub mod store;
+pub use self::types::*;
 pub mod embeddings;
 
 use serde::{Deserialize, Serialize};

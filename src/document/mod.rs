@@ -1,14 +1,20 @@
+// src/document/mod.rs
+pub mod types;
 pub mod processor;
-pub mod ingestion;
 pub mod store;
+
+pub use self::types::*;
+pub use self::store::DocumentStore;
+pub use self::processor::DocumentProcessor;
 
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Document {
-    pub id: String,
+    pub id: Uuid,
     pub title: String,
     pub content: String,
     pub content_type: String,
@@ -16,7 +22,7 @@ pub struct Document {
     pub vector_embedding: Option<Vec<f32>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct DocumentMetadata {
     pub source_type: String,
     pub author: Option<String>,
@@ -31,6 +37,6 @@ pub struct DocumentMetadata {
 pub enum ProcessingStatus {
     Pending,
     Processing(f32),  // Progress percentage
-    Completed(String),  // Document ID
+    Completed(Uuid),  // Document ID
     Failed(String),   // Error message
 }

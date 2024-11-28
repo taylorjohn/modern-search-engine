@@ -1,25 +1,32 @@
-pub mod metrics;
-pub mod tracing;
-
+// src/telemetry/mod.rs
 use crate::config::Config;
 use anyhow::Result;
+use tracing_subscriber::{fmt, EnvFilter};
 
 pub fn init_telemetry(config: &Config) -> Result<()> {
     if config.telemetry.tracing_enabled {
-        tracing::init_tracing(&config.telemetry.log_level)?;
-    }
-
-    if config.telemetry.metrics_enabled {
-        metrics::init_metrics(config.telemetry.metrics_port)?;
+        init_tracing(&config.telemetry.log_level)?;
     }
 
     Ok(())
 }
 
-pub fn shutdown_telemetry() {
-    tracing::shutdown_tracing();
-    metrics::shutdown_metrics();
+fn init_tracing(log_level: &str) -> Result<()> {
+    let env_filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new(log_level));
+
+    fmt()
+        .with_env_filter(env_filter)
+        .with_thread_ids(true)
+        .with_thread_names(true)
+        .with_file(true)
+        .with_line_number(true)
+        .with_target(true)
+        .init();
+
+    Ok(())
 }
 
-pub use metrics::METRICS as metrics;
-pub use tracing::get_tracer;
+pub fn shutdown_telemetry() {
+    // Cleanup if needed
+}

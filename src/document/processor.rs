@@ -1,15 +1,12 @@
 use crate::vector::store::VectorStore;
 use crate::document::{Document, DocumentMetadata, ProcessingStatus};
-use anyhow::Result;
+use anyhow::{Result, Context};
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use std::collections::HashMap;
 use uuid::Uuid;
 use chrono::Utc;
-
-pub struct DocumentProcessor {
-    vector_store: Arc<RwLock<VectorStore>>,
-    processing_queue: Arc<RwLock<HashMap<String, ProcessingStatus>>>,
-}
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DocumentUpload {
@@ -17,6 +14,11 @@ pub struct DocumentUpload {
     pub title: Option<String>,
     pub content_type: String,
     pub metadata: Option<HashMap<String, String>>,
+}
+
+pub struct DocumentProcessor {
+    vector_store: Arc<RwLock<VectorStore>>,
+    processing_queue: Arc<RwLock<HashMap<String, ProcessingStatus>>>,
 }
 
 impl DocumentProcessor {
@@ -27,89 +29,61 @@ impl DocumentProcessor {
         }
     }
 
-    pub async fn process_document(&self, upload: DocumentUpload) -> Result<String> {
+    pub async fn process_document(&self, upload: DocumentUpload) -> Result<Document> {
         let processing_id = Uuid::new_v4().to_string();
         
-        // Add to processing queue
+        // Update queue status
         {
             let mut queue = self.processing_queue.write().await;
-            queue.insert(processing_id.clone(), ProcessingStatus::Pending);
+            queue.insert(processing_id.clone(), ProcessingStatus::Processing(0.0));
         }
 
-        // Clone necessary components for async processing
-        let vector_store = self.vector_store.clone();
-        let processing_queue = self.processing_queue.clone();
-        let processing_id_clone = processing_id.clone();
+        // Generate vector embedding
+        let vector_store = self.vector_store.read().await;
+        let vector_embedding = vector_store.generate_embedding(&upload.content)
+            .await
+            .context("Failed to generate vector embedding")?;
 
-        // Spawn processing task
-        tokio::spawn(async move {
-            let result = async {
-                // Update status to processing
-                {
-                    let mut queue = processing_queue.write().await;
-                    queue.insert(processing_id_clone.clone(), ProcessingStatus::Processing(0.0));
-                }
+        // Calculate word count
+        let word_count = upload.content.split_whitespace().count();
+        
+        // Create document
+        let document = Document {
+            id: Uuid::new_v4().to_string(),
+            title: upload.title.unwrap_or_else(|| "Untitled".to_string()),
+            content: upload.content,
+            content_type: upload.content_type,
+            vector_embedding: Some(vector_embedding),
+            metadata: DocumentMetadata {
+                source_type: "upload".to_string(),
+                author: upload.metadata.as_ref().and_then(|m| m.get("author").cloned()),
+                created_at: Utc::now(),
+                last_modified: Utc::now(),
+                language: None,
+                tags: Vec::new(),
+                custom_metadata: upload.metadata.unwrap_or_default(),
+            },
+        };
 
-                // Generate vector embedding
-                let vector_store = vector_store.read().await;
-                let vector_embedding = vector_store.generate_embedding(&upload.content).await?;
+        // Update processing status
+        {
+            let mut queue = self.processing_queue.write().await;
+            queue.insert(processing_id.clone(), ProcessingStatus::Completed(document.id.clone()));
+        }
 
-                // Create document
-                let document = Document {
-                    id: Uuid::new_v4().to_string(),
-                    title: upload.title.unwrap_or_else(|| "Untitled".to_string()),
-                    content: upload.content,
-                    content_type: upload.content_type,
-                    vector_embedding: Some(vector_embedding),
-                    metadata: DocumentMetadata {
-                        source_type: "upload".to_string(),
-                        author: upload.metadata.as_ref().and_then(|m| m.get("author").cloned()),
-                        created_at: Utc::now(),
-                        last_modified: Utc::now(),
-                        language: None, // TODO: Implement language detection
-                        tags: Vec::new(),
-                        custom_metadata: upload.metadata.unwrap_or_default(),
-                    },
-                };
-
-                // Store document
-                let mut vector_store = vector_store.write().await;
-                vector_store.add_document(&document).await?;
-
-                // Update status to completed
-                {
-                    let mut queue = processing_queue.write().await;
-                    queue.insert(
-                        processing_id_clone.clone(),
-                        ProcessingStatus::Completed(document.id.clone()),
-                    );
-                }
-
-                Ok::<_, anyhow::Error>(())
-            }.await;
-
-            if let Err(e) = result {
-                let mut queue = processing_queue.write().await;
-                queue.insert(
-                    processing_id_clone,
-                    ProcessingStatus::Failed(e.to_string()),
-                );
-            }
-        });
-
-        Ok(processing_id)
+        Ok(document)
     }
 
     pub async fn get_processing_status(&self, processing_id: &str) -> Result<ProcessingStatus> {
         let queue = self.processing_queue.read().await;
         queue.get(processing_id)
             .cloned()
-            .ok_or_else(|| anyhow::anyhow!("Processing task not found"))
+            .context("Processing task not found")
     }
 
     pub async fn cleanup_old_tasks(&self, hours: i64) -> Result<()> {
-        let now = Utc::now();
         let mut queue = self.processing_queue.write().await;
+        let cutoff = Utc::now() - chrono::Duration::hours(hours);
         
         queue.retain(|_, status| {
             matches!(status, ProcessingStatus::Processing(_) | ProcessingStatus::Pending)
@@ -125,6 +99,29 @@ mod tests {
 
     #[tokio::test]
     async fn test_document_processing() {
-        // TODO: Implement tests
+        // Create test vector store
+        let vector_store = Arc::new(RwLock::new(
+            VectorStore::new().await.expect("Failed to create vector store")
+        ));
+
+        // Create processor
+        let processor = DocumentProcessor::new(vector_store);
+
+        // Create test upload
+        let upload = DocumentUpload {
+            content: "Test content".to_string(),
+            title: Some("Test Document".to_string()),
+            content_type: "text/plain".to_string(),
+            metadata: Some(HashMap::new()),
+        };
+
+        // Process document
+        let result = processor.process_document(upload).await;
+        assert!(result.is_ok());
+
+        let doc = result.unwrap();
+        assert!(doc.vector_embedding.is_some());
+        assert_eq!(doc.title, "Test Document");
+        assert_eq!(doc.content_type, "text/plain");
     }
 }

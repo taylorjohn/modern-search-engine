@@ -1,36 +1,31 @@
+// src/api/error.rs
+
 use std::fmt;
-use thiserror::Error;
 use warp::reject::Reject;
 use serde::Serialize;
 
-#[derive(Error, Debug)]
+#[derive(Debug)]
 pub enum ApiError {
-    #[error("Search error: {0}")]
     SearchError(anyhow::Error),
-
-    #[error("Processing error: {0}")]
     ProcessingError(anyhow::Error),
-
-    #[error("Document not found: {0}")]
     DocumentNotFound(String),
-
-    #[error("Invalid request: {0}")]
     InvalidRequest(String),
-
-    #[error("Authentication error: {0}")]
     AuthError(String),
-
-    #[error("Internal server error: {0}")]
     InternalError(anyhow::Error),
-
-    #[error("Database error: {0}")]
-    DatabaseError(anyhow::Error),
-
-    #[error("Vector store error: {0}")]
-    VectorStoreError(anyhow::Error),
 }
 
-impl Reject for ApiError {}
+impl fmt::Display for ApiError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ApiError::SearchError(e) => write!(f, "Search error: {}", e),
+            ApiError::ProcessingError(e) => write!(f, "Processing error: {}", e),
+            ApiError::DocumentNotFound(id) => write!(f, "Document not found: {}", id),
+            ApiError::InvalidRequest(msg) => write!(f, "Invalid request: {}", msg),
+            ApiError::AuthError(msg) => write!(f, "Authentication error: {}", msg),
+            ApiError::InternalError(e) => write!(f, "Internal error: {}", e),
+        }
+    }
+}
 
 #[derive(Serialize)]
 pub struct ErrorResponse {
@@ -39,6 +34,9 @@ pub struct ErrorResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub details: Option<serde_json::Value>,
 }
+
+impl std::error::Error for ApiError {}
+impl Reject for ApiError {}
 
 impl ApiError {
     pub fn to_response(&self) -> ErrorResponse {
@@ -71,20 +69,6 @@ impl ApiError {
             ApiError::InternalError(e) => ErrorResponse {
                 code: "INTERNAL_ERROR".to_string(),
                 message: "An internal error occurred".to_string(),
-                details: Some(serde_json::json!({
-                    "error": e.to_string()
-                })),
-            },
-            ApiError::DatabaseError(e) => ErrorResponse {
-                code: "DATABASE_ERROR".to_string(),
-                message: "Database operation failed".to_string(),
-                details: Some(serde_json::json!({
-                    "error": e.to_string()
-                })),
-            },
-            ApiError::VectorStoreError(e) => ErrorResponse {
-                code: "VECTOR_STORE_ERROR".to_string(),
-                message: "Vector store operation failed".to_string(),
                 details: Some(serde_json::json!({
                     "error": e.to_string()
                 })),

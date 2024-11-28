@@ -1,10 +1,11 @@
-pub mod routes;
-pub mod handlers;
+// src/api/mod.rs
+
 pub mod error;
+pub mod handlers;
+pub mod routes;
+pub mod types;
 
-pub use self::error::{ApiError, ErrorResponse};
+pub use self::error::{ApiError, ErrorResponse, handle_rejection};
 pub use self::handlers::{handle_search, handle_document_upload, handle_status_check};
+pub use self::types::{SearchRequest, SearchResponse, SearchResult, ApiResponse};
 pub use self::routes::create_routes;
-
-/// API response type alias for common results
-pub type ApiResult<T> = Result<T, ApiError>;
