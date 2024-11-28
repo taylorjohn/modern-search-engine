@@ -61,20 +61,79 @@ cargo run
 
 ## Project Structure
 
+
 ```
-search-engine/
+modern-search-engine/
 ├── src/
-│   ├── main.rs               # Server setup and sample data
-│   ├── search_handler.rs     # Search request handling
-│   ├── search_result.rs      # Result types and structures
-│   ├── data_layer.rs         # Data storage abstraction
-│   ├── semantic_analysis.rs  # Semantic analysis implementation
-│   ├── query_expander.rs     # Query expansion logic
-│   ├── spell_checker.rs      # Spell checking implementation
-│   ├── trie.rs              # Trie data structure
-│   └── scoring.rs            # Scoring calculations
-└── static/
-    └── index.html            # Web interface
+│   ├── api/
+│   │   ├── handlers.rs
+│   │   ├── routes.rs
+│   │   ├── error.rs
+│   │   └── mod.rs
+│   ├── document/
+│   │   ├── processor.rs 
+│   │   ├── store.rs
+│   │   ├── types.rs
+│   │   └── mod.rs
+│   ├── search/
+│   │   ├── engine.rs
+│   │   ├── query_parser.rs
+│   │   ├── executor.rs
+│   │   ├── scoring.rs
+│   │   ├── types.rs
+│   │   └── mod.rs
+│   ├── vector/
+│   │   ├── store.rs
+│   │   ├── embeddings.rs
+│   │   ├── types.rs
+│   │   └── mod.rs
+│   ├── telemetry/
+│   │   ├── metrics.rs
+│   │   ├── tracing.rs
+│   │   └── mod.rs
+│   ├── config/
+│   │   ├── settings.rs
+│   │   └── mod.rs
+│   └── utils/
+│       ├── helpers.rs
+│       └── mod.rs
+├── ui/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── search/
+│   │   │   │   ├── SearchBar.tsx
+│   │   │   │   ├── SearchResults.tsx
+│   │   │   │   └── SearchAnalytics.tsx 
+│   │   │   ├── document/
+│   │   │   │   ├── DocumentUpload.tsx
+│   │   │   │   ├── ProcessingStatus.tsx
+│   │   │   │   └── DocumentPreview.tsx
+│   │   │   └── ui/
+│   │   │       ├── button.tsx
+│   │   │       ├── card.tsx
+│   │   │       ├── input.tsx
+│   │   │       └── sheet.tsx
+│   │   ├── pages/
+│   │   │   ├── Search.tsx
+│   │   │   └── Upload.tsx
+│   │   ├── App.tsx
+│   │   ├── types.ts
+│   │   └── styles/
+│   │       └── globals.css
+│   ├── package.json
+│   ├── tailwind.config.js
+│   ├── tsconfig.json
+│   └── vite.config.ts
+├── migrations/
+│   └── init.sql
+├── docs/
+│   ├── API.md
+│   ├── SETUP.md
+│   └── ARCHITECTURE.md
+└── scripts/
+    ├── setup.sh
+    └── test.sh
+
 ```
 
 # Daily Setup Guide for Modern Search Engine Development
