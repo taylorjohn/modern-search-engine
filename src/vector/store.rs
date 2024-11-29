@@ -36,10 +36,21 @@ impl VectorStore {
                 d.title,
                 d.content_type,
                 d.vector_embedding as "vector_embedding!: Vec<f32>",
-                (1 - (d.vector_embedding <=> $1::float4[])) as similarity
+                CASE 
+                    WHEN d.vector_embedding IS NULL THEN 0.0
+                    ELSE 1.0 - (
+                        SELECT sum(v1.val * v2.val) / (
+                            sqrt(sum(v1.val * v1.val)) * 
+                            sqrt(sum(v2.val * v2.val))
+                        )
+                        FROM unnest($1::float4[]) WITH ORDINALITY AS v1(val, ix),
+                             unnest(d.vector_embedding) WITH ORDINALITY AS v2(val, ix)
+                        WHERE v1.ix = v2.ix
+                    )
+                END as similarity
             FROM documents d
             WHERE d.vector_embedding IS NOT NULL
-            ORDER BY d.vector_embedding <=> $1::float4[]
+            ORDER BY similarity DESC
             LIMIT $2
             "#,
             query_vec as &[f32],
@@ -59,7 +70,7 @@ impl VectorStore {
                     dimension: self.dimension,
                     source: r.content_type,
                 },
-                score: r.similarity.unwrap_or(0.0) as f32,
+                score: r.similarity as f32,
             })
             .collect())
     }

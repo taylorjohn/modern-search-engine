@@ -5,10 +5,10 @@ use serde::Serialize;
 #[derive(Error, Debug)]
 pub enum ApiError {
     #[error("Search error: {0}")]
-    SearchError(#[from] anyhow::Error),
+    SearchError(String),
     
     #[error("Database error: {0}")]
-    DatabaseError(#[from] sqlx::Error),
+    DatabaseError(String),
     
     #[error("Processing error: {0}")]
     ProcessingError(String),
@@ -29,6 +29,12 @@ pub struct ErrorResponse {
 
 impl From<anyhow::Error> for ApiError {
     fn from(err: anyhow::Error) -> Self {
-        ApiError::SearchError(err)
+        ApiError::SearchError(err.to_string())
+    }
+}
+
+impl From<sqlx::Error> for ApiError {
+    fn from(err: sqlx::Error) -> Self {
+        ApiError::DatabaseError(err.to_string())
     }
 }

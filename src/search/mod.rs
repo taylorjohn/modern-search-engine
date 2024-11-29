@@ -1,5 +1,6 @@
 mod engine;
 mod types;
 
+pub use crate::config::SearchConfig;
 pub use engine::SearchEngine;
-pub use types::{SearchConfig, SearchResult, SearchScores, SearchMetadata};
+pub use types::{SearchResult, SearchScores, SearchMetadata};

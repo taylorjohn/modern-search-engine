@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use crate::document::Document;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VectorDocument {
@@ -17,16 +18,16 @@ pub struct VectorMetadata {
     pub source: String,
 }
 
-impl Default for VectorDocument {
-    fn default() -> Self {
+impl From<&Document> for VectorDocument {
+    fn from(doc: &Document) -> Self {
         Self {
-            id: Uuid::new_v4(),
-            vector: Vec::new(),
+            id: doc.id,
+            vector: doc.vector_embedding.clone().unwrap_or_default(),
             metadata: VectorMetadata {
-                title: String::new(),
+                title: doc.title.clone(),
                 content_hash: String::new(),
-                dimension: 384,
-                source: String::new(),
+                dimension: 384, // Default dimension
+                source: doc.content_type.clone(),
             },
             score: 0.0,
         }
