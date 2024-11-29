@@ -36,17 +36,10 @@ impl VectorStore {
                 d.title,
                 d.content_type,
                 d.vector_embedding as "vector_embedding!: Vec<f32>",
-                (
-                    1 - coalesce(
-                        dot_product(d.vector_embedding, $1::float4[]) /
-                        (sqrt(dot_product(d.vector_embedding, d.vector_embedding)) * 
-                         sqrt(dot_product($1::float4[], $1::float4[]))),
-                        0
-                    )
-                ) as similarity
+                (1 - (d.vector_embedding <=> $1::float4[])) as similarity
             FROM documents d
             WHERE d.vector_embedding IS NOT NULL
-            ORDER BY similarity DESC
+            ORDER BY d.vector_embedding <=> $1::float4[]
             LIMIT $2
             "#,
             query_vec as &[f32],
