@@ -1,6 +1,5 @@
 use anyhow::Result;
 use sqlx::PgPool;
-use uuid::Uuid;
 use crate::vector::types::{VectorDocument, VectorMetadata};
 
 pub struct VectorStore {
@@ -37,16 +36,14 @@ impl VectorStore {
                 d.title,
                 d.content_type,
                 d.vector_embedding as "vector_embedding!: Vec<f32>",
-                1 - (
-                    coalesce(
-                        (SELECT sum(x.a * x.b) / sqrt(sum(x.a * x.a) * sum(x.b * x.b))
-                        FROM (
-                            SELECT 
-                                unnest($1::float4[]) as a,
-                                unnest(d.vector_embedding) as b
-                        ) x
-                    ), 0
-                )) as similarity
+                (
+                    1 - coalesce(
+                        dot_product(d.vector_embedding, $1::float4[]) /
+                        (sqrt(dot_product(d.vector_embedding, d.vector_embedding)) * 
+                         sqrt(dot_product($1::float4[], $1::float4[]))),
+                        0
+                    )
+                ) as similarity
             FROM documents d
             WHERE d.vector_embedding IS NOT NULL
             ORDER BY similarity DESC

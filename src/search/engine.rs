@@ -1,6 +1,8 @@
 use anyhow::Result;
 use std::sync::Arc;
+use std::collections::HashMap;
 use tokio::sync::RwLock;
+use chrono::Utc;
 use crate::config::Config;
 use crate::search::types::{SearchResult, SearchScores, SearchMetadata};
 use crate::vector::VectorStore;
@@ -24,14 +26,17 @@ impl SearchEngine {
         limit: Option<usize>,
         offset: Option<usize>,
     ) -> Result<Vec<SearchResult>> {
+        // TODO: Implement proper text-to-vector conversion here
+        let query_vec = vec![0.0f32; 384]; // Placeholder
+        
         let vector_store = self.vector_store.read().await;
-        let vec_results = vector_store.search(query.as_bytes(), limit.unwrap_or(10)).await?;
+        let vec_results = vector_store.search(&query_vec, limit.unwrap_or(10)).await?;
 
         Ok(vec_results.into_iter()
             .map(|doc| SearchResult {
                 id: doc.id.to_string(),
                 title: doc.metadata.title,
-                content: String::new(), // You would need to fetch this from your document store
+                content: String::new(),
                 scores: SearchScores {
                     text_score: 0.0,
                     vector_score: doc.score,

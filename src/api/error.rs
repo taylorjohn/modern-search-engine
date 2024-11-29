@@ -1,25 +1,30 @@
-use thiserror::Error;
-use warp::reject::Reject;
-use serde::Serialize;
+use std::sync::Arc;
+use warp::{Reply, Rejection};
+use crate::search::SearchEngine;
+use crate::document::DocumentProcessor;
+use crate::api::error::ApiError;
 
-#[derive(Error, Debug)]
-pub enum ApiError {
-    #[error("Search error: {0}")]
-    SearchError(anyhow::Error),
-    #[error("Database error: {0}")]
-    DatabaseError(anyhow::Error),
-    #[error("Processing error: {0}")]
-    ProcessingError(String),
-    #[error("Document not found: {0}")]
-    DocumentNotFound(String),
+pub async fn handle_search(
+    query: String,
+    engine: Arc<SearchEngine>,
+) -> Result<impl Reply, Rejection> {
+    let results = engine.search(&query, None, None)
+        .await
+        .map_err(|e| warp::reject::custom(ApiError::SearchError(e)))?;
+
+    Ok(warp::reply::json(&results))
 }
 
-impl Reject for ApiError {}
+pub async fn handle_document_upload(
+    doc: crate::document::Document,
+    processor: Arc<DocumentProcessor>,
+) -> Result<impl Reply, Rejection> {
+    let id = processor.process_document(doc)
+        .await
+        .map_err(|e| warp::reject::custom(ApiError::ProcessingError(e.to_string())))?;
 
-#[derive(Serialize)]
-pub struct ErrorResponse {
-    pub code: String,
-    pub message: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub details: Option<serde_json::Value>,
+    Ok(warp::reply::json(&serde_json::json!({
+        "id": id,
+        "status": "processing"
+    })))
 }

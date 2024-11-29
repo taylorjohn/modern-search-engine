@@ -28,6 +28,25 @@ pub struct DocumentMetadata {
 pub enum ProcessingStatus {
     Pending,
     Processing(f32),
-    Completed(Uuid),
+    Completed(String),
     Failed(String),
+}
+
+#[derive(Debug, Deserialize)]
+pub enum DocumentUpload {
+    Pdf {
+        base64_content: String,
+        filename: String,
+        metadata: Option<HashMap<String, String>>,
+    },
+    Html {
+        content: String,
+        url: Option<String>,
+        metadata: Option<HashMap<String, String>>,
+    },
+    Text {
+        content: String,
+        title: String,
+        metadata: Option<HashMap<String, String>>,
+    },
 }
