@@ -2,6 +2,7 @@
 use warp::{Filter, Reply, Rejection};
 use std::sync::Arc;
 use anyhow::Result;
+use sqlx::PgPool;
 use crate::search::engine::SearchEngine;
 use crate::document::processor::DocumentProcessor;
 use crate::api::handlers::{handle_search, handle_document_upload, handle_status_check};
@@ -46,31 +47,25 @@ pub fn create_routes(
 }
 
 // Create helper function for setting up search system
-pub async fn setup_search_system<T>() -> Result<(Arc<DocumentProcessor>, Arc<SearchEngine>)> {
-    use crate::config::Config;
-    use sqlx::postgres::PgPoolOptions;
-
-    // Load config
-    let config = Config::new()?;
-
-    // Create database pool
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect(&config.database.url)
-        .await?;
-
-    // Initialize vector store
-    let vector_store = Arc::<T>::new(tokio::sync::RwLock::new(
-        crate::vector::store::VectorStore::new(pool.clone(), 384).await?
+pub async fn setup_search_system() -> anyhow::Result<(Arc<DocumentProcessor>, Arc<SearchEngine>)> {
+    let pool = PgPool::connect("postgres://localhost/search_engine").await?;
+    
+    let vector_store = Arc::new(RwLock::new(
+        VectorStore::new(pool.clone(), 384).await?
     ));
 
-    // Create search engine
-    let search_engine = Arc::<T>::new(SearchEngine::new(
-        vector_store.clone(),
-        config.search.clone(),
-    )?);
+    let config = SearchConfig {
+        vector_weight: 0.6,
+        text_weight: 0.4,
+        min_score: 0.1,
+        max_results: 10,
+    };
 
-    // Create document processor
+    let search_engine = Arc::new(SearchEngine::new(
+        vector_store.clone(),
+        config,
+    ));
+
     let processor = Arc::new(DocumentProcessor::new(
         vector_store,
         search_engine.clone(),

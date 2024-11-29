@@ -1,9 +1,10 @@
-pub mod types;
-pub mod store;
-pub use self::types::*;
 pub mod embeddings;
+pub mod store;
+pub mod types;
 
-use serde::{Deserialize, Serialize};
+pub use self::store::VectorStore;
+pub use self::embeddings::EmbeddingGenerator;
+pub use self::types::{VectorDocument, VectorMetadata, VectorSearchResult};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VectorDocument {
