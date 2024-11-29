@@ -1,35 +1,17 @@
-// src/api/routes.rs
-use warp::{Filter, Reply, Rejection};
 use std::sync::Arc;
-use anyhow::Result;
-use sqlx::PgPool;
-use crate::search::engine::SearchEngine;
-use crate::document::processor::DocumentProcessor;
-use crate::api::handlers::{handle_search, handle_document_upload, handle_status_check};
-use crate::api::error::ApiError;
-use crate::document::types::DocumentUpload;
-
-// Helper filter functions
-pub fn with_search_engine(
-    engine: Arc<SearchEngine>,
-) -> impl Filter<Extract = (Arc<SearchEngine>,), Error = std::convert::Infallible> + Clone {
-    warp::any().map(move || engine.clone())
-}
-
-pub fn with_document_processor(
-    processor: Arc<DocumentProcessor>,
-) -> impl Filter<Extract = (Arc<DocumentProcessor>,), Error = std::convert::Infallible> + Clone {
-    warp::any().map(move || processor.clone())
-}
+use warp::{Filter, Reply, Rejection};
+use crate::search::SearchEngine;
+use crate::document::DocumentProcessor;
+use crate::api::handlers::{handle_search, handle_document_upload};
 
 pub fn create_routes(
+    engine: Arc<SearchEngine>,
     processor: Arc<DocumentProcessor>,
-    search_engine: Arc<SearchEngine>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     let search = warp::path("search")
         .and(warp::get())
         .and(warp::query())
-        .and(with_search_engine(search_engine.clone()))
+        .and(with_search_engine(engine.clone()))
         .and_then(handle_search);
 
     let upload = warp::path("documents")
@@ -38,94 +20,17 @@ pub fn create_routes(
         .and(with_document_processor(processor.clone()))
         .and_then(handle_document_upload);
 
-    let status = warp::path!("documents" / "status" / String)
-        .and(warp::get())
-        .and(with_document_processor(processor.clone()))
-        .and_then(handle_status_check);
-
-    search.or(upload).or(status)
+    search.or(upload)
 }
 
-// Create helper function for setting up search system
-pub async fn setup_search_system() -> anyhow::Result<(Arc<DocumentProcessor>, Arc<SearchEngine>)> {
-    let pool = PgPool::connect("postgres://localhost/search_engine").await?;
-    
-    let vector_store = Arc::new(RwLock::new(
-        VectorStore::new(pool.clone(), 384).await?
-    ));
-
-    let config = SearchConfig {
-        vector_weight: 0.6,
-        text_weight: 0.4,
-        min_score: 0.1,
-        max_results: 10,
-    };
-
-    let search_engine = Arc::new(SearchEngine::new(
-        vector_store.clone(),
-        config,
-    ));
-
-    let processor = Arc::new(DocumentProcessor::new(
-        vector_store,
-        search_engine.clone(),
-    ));
-
-    Ok((processor, search_engine))
+fn with_search_engine(
+    engine: Arc<SearchEngine>
+) -> impl Filter<Extract = (Arc<SearchEngine>,), Error = std::convert::Infallible> + Clone {
+    warp::any().map(move || engine.clone())
 }
 
-// Application entry point
-#[tokio::main]
-async fn main() -> Result<()> {
-    // Initialize tracing
-    use tracing_subscriber::{fmt, EnvFilter};
-    fmt()
-        .with_env_filter(EnvFilter::from_default_env())
-        .init();
-
-    // Setup search system
-    let (processor, search_engine) = setup_search_system().await?;
-
-    // Create routes
-    let routes = create_routes(processor, search_engine);
-
-    // Add error handling
-    let routes = routes.recover(handle_rejection);
-
-    // Start server
-    println!("Starting server on http://127.0.0.1:3030");
-    warp::serve(routes)
-        .run(([127, 0, 0, 1], 3030))
-        .await;
-
-    Ok(())
-}
-
-// Error handling
-async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
-    if err.is_not_found() {
-        Ok(warp::reply::with_status(
-            warp::reply::json(&serde_json::json!({
-                "error": "Not Found",
-                "code": "NOT_FOUND"
-            })),
-            warp::http::StatusCode::NOT_FOUND,
-        ))
-    } else if let Some(e) = err.find::<ApiError>() {
-        Ok(warp::reply::with_status(
-            warp::reply::json(&serde_json::json!({
-                "error": e.to_string(),
-                "code": "API_ERROR"
-            })),
-            warp::http::StatusCode::BAD_REQUEST,
-        ))
-    } else {
-        Ok(warp::reply::with_status(
-            warp::reply::json(&serde_json::json!({
-                "error": "Internal Server Error",
-                "code": "INTERNAL_ERROR"
-            })),
-            warp::http::StatusCode::INTERNAL_SERVER_ERROR,
-        ))
-    }
+fn with_document_processor(
+    processor: Arc<DocumentProcessor>
+) -> impl Filter<Extract = (Arc<DocumentProcessor>,), Error = std::convert::Infallible> + Clone {
+    warp::any().map(move || processor.clone())
 }

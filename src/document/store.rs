@@ -1,7 +1,7 @@
-// src/document/store.rs
-use sqlx::PgPool;
-use sqlx::types::{Uuid, JsonValue};
 use anyhow::Result;
+use sqlx::PgPool;
+use crate::document::{Document, DocumentMetadata};
+use uuid::Uuid;
 
 pub struct DocumentStore {
     pool: PgPool,
@@ -12,50 +12,59 @@ impl DocumentStore {
         Ok(Self { pool })
     }
 
-    pub async fn add_document(&self, 
-        title: &str,
-        content: &str, 
-        content_type: &str,
-        metadata: JsonValue
-    ) -> Result<Uuid> {
-        let id = sqlx::query!(
+    pub async fn store_document(&self, document: &Document) -> Result<()> {
+        sqlx::query!(
             r#"
-            INSERT INTO documents (title, content, content_type, metadata)
-            VALUES ($1, $2, $3, $4)
-            RETURNING id
+            INSERT INTO documents 
+                (id, title, content, content_type, vector_embedding, metadata,
+                created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5::float4[], $6, $7, $8)
             "#,
-            title,
-            content,
-            content_type,
-            metadata
+            document.id,
+            document.title,
+            document.content,
+            document.content_type,
+            document.vector_embedding.as_ref().map(|v| v.as_slice()),
+            serde_json::to_value(&document.metadata)?,
+            document.created_at,
+            document.updated_at,
         )
-        .fetch_one(&self.pool)
+        .execute(&self.pool)
         .await?;
 
-        Ok(id.id)
+        Ok(())
     }
 
     pub async fn get_document(&self, id: Uuid) -> Result<Option<Document>> {
-        sqlx::query_as!(Document,
+        let record = sqlx::query!(
             r#"
-            SELECT id, title, content, content_type, metadata, created_at, updated_at
+            SELECT 
+                id,
+                title,
+                content, 
+                content_type,
+                vector_embedding as "vector_embedding?: Vec<f32>",
+                metadata as "metadata!: serde_json::Value",
+                created_at,
+                updated_at
             FROM documents 
             WHERE id = $1
             "#,
             id
         )
         .fetch_optional(&self.pool)
-        .await
-    }
-}
+        .await?;
 
-#[derive(sqlx::FromRow)]
-pub struct Document {
-    pub id: Uuid,
-    pub title: String,
-    pub content: String,
-    pub content_type: String,
-    pub metadata: JsonValue,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+        Ok(record.map(|r| Document {
+            id: r.id,
+            title: r.title,
+            content: r.content,
+            content_type: r.content_type,
+            vector_embedding: r.vector_embedding,
+            metadata: serde_json::from_value(r.metadata)
+                .unwrap_or_else(|_| DocumentMetadata::default()),
+            created_at: r.created_at,
+            updated_at: r.updated_at,
+        }))
+    }
 }

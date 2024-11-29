@@ -1,67 +1,45 @@
-// src/search/query_parser.rs
 use anyhow::Result;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ParsedQuery {
-    pub terms: Vec<String>,
-    pub phrases: Vec<String>,
+    pub text: String,
+    pub filters: QueryFilters,
+}
+
+#[derive(Debug, Default)]
+pub struct QueryFilters {
+    pub content_type: Option<String>,
+    pub author: Option<String>,
+    pub date_range: Option<(String, String)>,
 }
 
 pub struct QueryParser;
 
 impl QueryParser {
     pub fn parse(query: &str) -> Result<ParsedQuery> {
-        let mut terms = Vec::new();
-        let mut phrases = Vec::new();
-        let mut current_phrase = String::new();
-        let mut in_phrase = false;
+        let mut filters = QueryFilters::default();
+        let mut text = String::new();
 
-        for token in query.split_whitespace() {
-            if token.starts_with('"') {
-                in_phrase = true;
-                current_phrase = token[1..].to_string();
-            } else if token.ends_with('"') {
-                in_phrase = false;
-                current_phrase.push_str(" ");
-                current_phrase.push_str(&token[..token.len()-1]);
-                phrases.push(current_phrase.clone());
-                current_phrase.clear();
-            } else if in_phrase {
-                current_phrase.push_str(" ");
-                current_phrase.push_str(token);
+        for part in query.split_whitespace() {
+            if part.contains(':') {
+                let mut split = part.splitn(2, ':');
+                let key = split.next().unwrap();
+                let value = split.next().unwrap();
+                
+                match key {
+                    "type" => filters.content_type = Some(value.to_string()),
+                    "author" => filters.author = Some(value.to_string()),
+                    _ => text.push_str(part)
+                }
             } else {
-                terms.push(token.to_string());
+                text.push_str(part);
+                text.push(' ');
             }
         }
 
-        // Handle unclosed quotes
-        if in_phrase {
-            terms.extend(current_phrase.split_whitespace().map(String::from));
-        }
-
-        Ok(ParsedQuery { terms, phrases })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_query_parsing() {
-        let query = r#"test "this phrase" another "quoted phrase" word"#;
-        let parsed = QueryParser::parse(query).unwrap();
-
-        assert_eq!(parsed.terms, vec!["test", "another", "word"]);
-        assert_eq!(parsed.phrases, vec!["this phrase", "quoted phrase"]);
-    }
-
-    #[test]
-    fn test_unclosed_quote() {
-        let query = r#"test "unclosed phrase"#;
-        let parsed = QueryParser::parse(query).unwrap();
-
-        assert_eq!(parsed.terms, vec!["test", "unclosed", "phrase"]);
-        assert!(parsed.phrases.is_empty());
+        Ok(ParsedQuery {
+            text: text.trim().to_string(),
+            filters,
+        })
     }
 }

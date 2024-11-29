@@ -1,7 +1,7 @@
-// src/document/types.rs
-use serde::{Serialize, Deserialize};
-use uuid::Uuid;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use chrono::{DateTime, Utc};
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Document {
@@ -9,8 +9,19 @@ pub struct Document {
     pub title: String,
     pub content: String,
     pub content_type: String,
-    pub metadata: serde_json::Value,
     pub vector_embedding: Option<Vec<f32>>,
+    pub metadata: DocumentMetadata,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct DocumentMetadata {
+    pub source_type: String,
+    pub author: Option<String>,
+    pub language: Option<String>,
+    pub tags: Vec<String>,
+    pub custom_metadata: HashMap<String, String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -19,33 +30,4 @@ pub enum ProcessingStatus {
     Processing(f32),
     Completed(Uuid),
     Failed(String),
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ProcessingTask {
-    pub id: Uuid,
-    pub document_id: Uuid,
-    pub status: ProcessingStatus,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(tag = "type", content = "content")]
-pub enum DocumentUpload {
-    Text {
-        content: String,
-        title: Option<String>,
-        metadata: Option<serde_json::Value>,
-    },
-    Html {
-        content: String,
-        url: Option<String>,
-        metadata: Option<serde_json::Value>,
-    },
-    Pdf {
-        base64: String,
-        filename: String,
-        metadata: Option<serde_json::Value>,
-    },
 }

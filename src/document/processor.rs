@@ -1,68 +1,75 @@
-// src/document/processor.rs
-use crate::vector::store::VectorStore;
-use crate::search::engine::SearchEngine;
-use crate::document::{Document, DocumentMetadata, ProcessingStatus, DocumentUpload};
 use anyhow::Result;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use std::collections::HashMap;
+use chrono::Utc;
 use uuid::Uuid;
+use crate::document::{Document, DocumentMetadata, DocumentUpload};
+use crate::vector::VectorStore;
 
 pub struct DocumentProcessor {
     vector_store: Arc<RwLock<VectorStore>>,
-    search_engine: Arc<SearchEngine>,
-    processing_queue: Arc<RwLock<HashMap<Uuid, ProcessingStatus>>>,
 }
 
 impl DocumentProcessor {
-    pub fn new(
-        vector_store: Arc<RwLock<VectorStore>>,
-        search_engine: Arc<SearchEngine>,
-    ) -> Self {
-        Self {
-            vector_store,
-            search_engine,
-            processing_queue: Arc::new(RwLock::new(HashMap::new())),
-        }
+    pub fn new(vector_store: Arc<RwLock<VectorStore>>) -> Self {
+        Self { vector_store }
     }
 
     pub async fn process_document(&self, upload: DocumentUpload) -> Result<Uuid> {
-        let processing_id = Uuid::new_v4();
-        
-        {
-            let mut queue = self.processing_queue.write().await;
-            queue.insert(processing_id, ProcessingStatus::Processing(0.0));
-        }
-
-        // Do processing
-        let store = self.vector_store.read().await;
-        let doc_id = match upload {
+        let (content, title, content_type, metadata) = match upload {
             DocumentUpload::Text { content, title, metadata } => {
-                let embedding = store.generate_embedding(&content).await?;
-                // Store document
-                store.add_document(
-                    title.unwrap_or_else(|| "Untitled".to_string()), 
-                    &content,
-                    "text",
-                    metadata.unwrap_or_default()
-                ).await?
+                (content, title, "text".to_string(), metadata)
+            },
+            DocumentUpload::Html { content, url, metadata } => {
+                (content, url.unwrap_or_else(|| "Untitled".to_string()), 
+                 "html".to_string(), metadata)
+            },
+            DocumentUpload::Pdf { base64_content, filename, metadata } => {
+                let content = base64::Engine::decode(
+                    &base64::engine::general_purpose::STANDARD, 
+                    base64_content
+                )?;
+                let text = String::from_utf8(content)?;
+                (text, filename, "pdf".to_string(), metadata)
             }
-            // Handle other types...
-            _ => return Err(anyhow::anyhow!("Unsupported document type"))
         };
 
-        {
-            let mut queue = self.processing_queue.write().await;
-            queue.insert(processing_id, ProcessingStatus::Completed(doc_id));
-        }
+        let now = Utc::now();
+        let document = Document {
+            id: Uuid::new_v4(),
+            title,
+            content,
+            content_type,
+            vector_embedding: None,
+            metadata: DocumentMetadata {
+                source_type: "upload".to_string(),
+                author: metadata.as_ref().and_then(|m| m.get("author").cloned()),
+                language: None,
+                tags: vec![],
+                custom_metadata: metadata.unwrap_or_default(),
+            },
+            created_at: now,
+            updated_at: now,
+        };
 
-        Ok(doc_id)
+        let vector_store = self.vector_store.write().await;
+        vector_store.add_document(&document.into()).await?;
+
+        Ok(document.id)
     }
+}
 
-    pub async fn get_processing_status(&self, id: Uuid) -> Result<ProcessingStatus> {
-        let queue = self.processing_queue.read().await;
-        queue.get(&id)
-            .cloned()
-            .ok_or_else(|| anyhow::anyhow!("Processing task not found"))
+impl From<&Document> for crate::vector::VectorDocument {
+    fn from(doc: &Document) -> Self {
+        Self {
+            id: doc.id,
+            vector: doc.vector_embedding.clone().unwrap_or_default(),
+            metadata: crate::vector::VectorMetadata {
+                title: doc.title.clone(),
+                content_hash: String::new(),
+                dimension: 384,
+                source: doc.content_type.clone(),
+            },
+        }
     }
 }

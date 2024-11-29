@@ -1,26 +1,27 @@
-// src/vector/store.rs
-use sqlx::PgPool;
-use sqlx::types::Uuid;
 use anyhow::Result;
+use sqlx::PgPool;
+use uuid::Uuid;
+use crate::vector::types::{VectorDocument, VectorMetadata};
 
 pub struct VectorStore {
     pool: PgPool,
+    dimension: usize,
 }
 
 impl VectorStore {
-    pub async fn new(pool: PgPool) -> Result<Self> {
-        Ok(Self { pool })
+    pub async fn new(pool: PgPool, dimension: usize) -> Result<Self> {
+        Ok(Self { pool, dimension })
     }
 
-    pub async fn add_document(&self, id: Uuid, vector: &[f32]) -> Result<()> {
+    pub async fn add_document(&self, doc: &VectorDocument) -> Result<()> {
         sqlx::query!(
             r#"
             UPDATE documents 
-            SET vector_embedding = $1::vector
-            WHERE id = $2
+            SET vector_embedding = $2::float4[]
+            WHERE id = $1
             "#,
-            vector as _,
-            id,
+            doc.id,
+            &doc.vector as &[f32]
         )
         .execute(&self.pool)
         .await?;
@@ -28,23 +29,46 @@ impl VectorStore {
         Ok(())
     }
 
-    pub async fn search(&self, query_vector: &[f32], limit: i64) -> Result<Vec<(Uuid, f32)>> {
+    pub async fn search(&self, query_vec: &[f32], limit: usize) -> Result<Vec<VectorDocument>> {
         let results = sqlx::query!(
             r#"
-            SELECT id, 1 - (vector_embedding <=> $1::vector) as score 
-            FROM documents
-            WHERE vector_embedding IS NOT NULL
-            ORDER BY vector_embedding <=> $1::vector
+            WITH similarity AS (
+                SELECT 
+                    id,
+                    title,
+                    content_type,
+                    vector_embedding as "vector_embedding!: Vec<f32>",
+                    1 - (
+                        SELECT sum((a.v * b.v))/sqrt(sum(a.v * a.v) * sum(b.v * b.v))
+                        FROM unnest($1::float4[]) WITH ORDINALITY as a(v,i)
+                        CROSS JOIN unnest(vector_embedding) WITH ORDINALITY as b(v,i)
+                        WHERE a.i = b.i
+                    ) as similarity
+                FROM documents
+                WHERE vector_embedding IS NOT NULL
+            )
+            SELECT * FROM similarity
+            ORDER BY similarity DESC
             LIMIT $2
             "#,
-            query_vector as _,
-            limit
+            query_vec as &[f32],
+            limit as i64
         )
         .fetch_all(&self.pool)
         .await?;
 
-        Ok(results.into_iter()
-            .map(|r| (r.id, r.score.unwrap_or(0.0)))
+        Ok(results
+            .into_iter()
+            .map(|r| VectorDocument {
+                id: r.id,
+                vector: r.vector_embedding,
+                metadata: VectorMetadata {
+                    title: r.title,
+                    content_hash: String::new(),
+                    dimension: self.dimension,
+                    source: r.content_type,
+                },
+            })
             .collect())
     }
 }

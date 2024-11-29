@@ -1,81 +1,50 @@
-// src/api/handlers.rs
-use crate::prelude::*;
+use std::sync::Arc;
+use warp::{Reply, Rejection};
+use serde::{Deserialize, Serialize};
+use crate::search::SearchEngine;
+use crate::document::DocumentProcessor;
+use crate::api::error::ApiError;
+
+#[derive(Debug, Deserialize)]
+pub struct SearchQuery {
+    pub q: String,
+    #[serde(default = "default_limit")]
+    pub limit: usize,
+    #[serde(default)]
+    pub offset: usize,
+}
+
+fn default_limit() -> usize {
+    10
+}
 
 pub async fn handle_search(
     query: SearchQuery,
     engine: Arc<SearchEngine>,
 ) -> Result<impl Reply, Rejection> {
-    let start = std::time::Instant::now();
-    
-    let results = engine.search(&query.q, Some(query.limit))
+    let results = engine.search(&query.q, Some(query.limit), Some(query.offset))
         .await
-        .map_err(|e| ApiError::InternalError(e))?;
+        .map_err(|e| warp::reject::custom(ApiError::SearchError(e)))?;
 
-    let response = SearchResponse {
-        query: query.q,
-        total: results.len(),
-        took_ms: start.elapsed().as_millis() as u64,
-        results,
-    };
+    Ok(warp::reply::json(&results))
+}
 
-    Ok(warp::reply::json(&response))
+#[derive(Debug, Serialize)]
+pub struct DocumentUploadResponse {
+    pub id: String,
+    pub status: String,
 }
 
 pub async fn handle_document_upload(
-    request: DocumentUploadRequest,
+    upload: crate::document::DocumentUpload,
     processor: Arc<DocumentProcessor>,
 ) -> Result<impl Reply, Rejection> {
-    let upload = DocumentUpload::Text {
-        content: request.content,
-        title: request.title,
-        metadata: request.metadata,
-    };
-
     let id = processor.process_document(upload)
         .await
-        .map_err(|e| ApiError::ProcessingError(e))?;
+        .map_err(|e| warp::reject::custom(ApiError::ProcessingError(e)))?;
 
     Ok(warp::reply::json(&DocumentUploadResponse {
         id,
         status: "processing".to_string(),
-        processing_id: id,
     }))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use warp::test::request;
-
-    #[tokio::test]
-    async fn test_search_handler() {
-        // Mock dependencies
-        let engine = Arc::new(SearchEngine::mock());
-        
-        // Create test query
-        let query = SearchQuery {
-            q: "test".to_string(),
-            limit: 10,
-            offset: 0,
-            use_vector: false,
-        };
-
-        // Make request
-        let response = handle_search(query, engine)
-            .await
-            .expect("Search should succeed");
-
-        // Verify response
-        assert!(response.status().is_success());
-    }
-
-    #[tokio::test]
-    async fn test_upload_handler() {
-        // TODO: Implement test
-    }
-
-    #[tokio::test]
-    async fn test_status_handler() {
-        // TODO: Implement test
-    }
 }

@@ -1,11 +1,9 @@
-// src/search/engine.rs
+use anyhow::Result;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use anyhow::Result;
-use sqlx::types::Uuid;
-
-use crate::vector::store::VectorStore;
-use crate::config::SearchConfig;
+use crate::vector::VectorStore;
+use crate::search::{SearchConfig, SearchResult};
+use crate::document::Document;
 
 pub struct SearchEngine {
     vector_store: Arc<RwLock<VectorStore>>,
@@ -13,63 +11,40 @@ pub struct SearchEngine {
 }
 
 impl SearchEngine {
-    pub fn new(vector_store: Arc<RwLock<VectorStore>>, config: SearchConfig) -> Self {
-        Self {
+    pub fn new(vector_store: Arc<RwLock<VectorStore>>, config: SearchConfig) -> Result<Self> {
+        Ok(Self {
             vector_store,
             config,
-        }
+        })
     }
 
-    pub async fn search(&self, query: &str, limit: Option<usize>) -> Result<Vec<SearchResult>> {
+    pub async fn search(
+        &self,
+        query: &str,
+        limit: Option<usize>,
+        offset: Option<usize>,
+    ) -> Result<Vec<SearchResult>> {
         let limit = limit.unwrap_or(self.config.max_results);
-        let vector_store = self.vector_store.read().await;
+        let offset = offset.unwrap_or(0);
 
-        if self.config.use_vector {
-            // Generate vector for query
-            let embedding = generate_embedding(query).await?;
-            
-            // Search by vector similarity
-            let results = vector_store.search(&embedding, limit as i64).await?;
-            
-            Ok(results.into_iter()
-                .map(|(id, score)| SearchResult { id, score })
-                .collect())
+        let results = if self.config.use_vector {
+            // Implement hybrid search
+            self.hybrid_search(query, limit, offset).await?
         } else {
-            // Fallback to text search
-            let results = sqlx::query_as!(
-                SearchResult,
-                r#"
-                SELECT 
-                    id,
-                    ts_rank_cd(to_tsvector('english', content), plainto_tsquery('english', $1)) as "score!",
-                    title,
-                    content 
-                FROM documents
-                WHERE to_tsvector('english', content) @@ plainto_tsquery('english', $1)
-                ORDER BY score DESC
-                LIMIT $2
-                "#,
-                query,
-                limit as i64
-            )
-            .fetch_all(&vector_store.pool)
-            .await?;
+            // Implement text-only search
+            self.text_search(query, limit, offset).await?
+        };
 
-            Ok(results)
-        }
+        Ok(results)
     }
-}
 
-#[derive(sqlx::FromRow)]
-pub struct SearchResult {
-    pub id: Uuid,
-    pub score: f32,
-    pub title: String,
-    pub content: String,
-}
+    async fn hybrid_search(&self, query: &str, limit: usize, offset: usize) -> Result<Vec<SearchResult>> {
+        // Implement hybrid search logic
+        todo!()
+    }
 
-async fn generate_embedding(text: &str) -> Result<Vec<f32>> {
-    // Implement vector embedding generation
-    // For now return dummy vector
-    Ok(vec![0.0; 384])
+    async fn text_search(&self, query: &str, limit: usize, offset: usize) -> Result<Vec<SearchResult>> {
+        // Implement text search logic
+        todo!()
+    }
 }
