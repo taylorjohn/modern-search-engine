@@ -32,22 +32,23 @@ impl VectorStore {
     pub async fn search(&self, query_vec: &[f32], limit: usize) -> Result<Vec<VectorDocument>> {
         let results = sqlx::query!(
             r#"
-            WITH similarity AS (
-                SELECT 
-                    id,
-                    title,
-                    content_type,
-                    vector_embedding as "vector_embedding!: Vec<f32>",
-                    1 - (
-                        SELECT sum((a.v * b.v))/sqrt(sum(a.v * a.v) * sum(b.v * b.v))
-                        FROM unnest($1::float4[]) WITH ORDINALITY as a(v,i)
-                        CROSS JOIN unnest(vector_embedding) WITH ORDINALITY as b(v,i)
-                        WHERE a.i = b.i
-                    ) as similarity
-                FROM documents
-                WHERE vector_embedding IS NOT NULL
-            )
-            SELECT * FROM similarity
+            SELECT 
+                d.id,
+                d.title,
+                d.content_type,
+                d.vector_embedding as "vector_embedding!: Vec<f32>",
+                1 - (
+                    coalesce(
+                        (SELECT sum(x.a * x.b) / sqrt(sum(x.a * x.a) * sum(x.b * x.b))
+                        FROM (
+                            SELECT 
+                                unnest($1::float4[]) as a,
+                                unnest(d.vector_embedding) as b
+                        ) x
+                    ), 0
+                )) as similarity
+            FROM documents d
+            WHERE d.vector_embedding IS NOT NULL
             ORDER BY similarity DESC
             LIMIT $2
             "#,
@@ -68,6 +69,7 @@ impl VectorStore {
                     dimension: self.dimension,
                     source: r.content_type,
                 },
+                score: r.similarity.unwrap_or(0.0) as f32,
             })
             .collect())
     }

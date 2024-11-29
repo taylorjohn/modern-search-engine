@@ -1,36 +1,29 @@
+use tracing::{info, warn, error, Level};
+use tracing_subscriber::{FmtSubscriber, EnvFilter};
 
-use anyhow::Result;
-use tracing_subscriber::FmtSubscriber;
-use tracing::{Level, Subscriber};
-
-pub fn get_tracer() -> impl Subscriber {
+pub fn init_tracing() {
     FmtSubscriber::builder()
-        .with_max_level(Level::TRACE)
-        .with_timer(UtcTime::rfc_3339())
+        .with_env_filter(EnvFilter::from_default_env())
+        .with_target(true)
         .with_thread_ids(true)
         .with_thread_names(true)
         .with_file(true)
         .with_line_number(true)
-        .with_target(true)
-        .compact()
-        .finish()
+        .init();
 }
 
-pub fn shutdown_tracing() {
-    // Clean up any tracing resources if needed
+pub fn log_startup_info() {
+    info!("Starting modern search engine...");
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tracing::{info, error, warn};
+pub fn log_config_error(err: &str) {
+    error!("Configuration error: {}", err);
+}
 
-    #[test]
-    fn test_tracing() {
-        init_tracing("debug").unwrap();
+pub fn log_search_request(query: &str) {
+    info!("Search request received: {}", query);
+}
 
-        info!("Test info message");
-        warn!("Test warning message");
-        error!("Test error message");
-    }
+pub fn log_processing_error(err: &str) {
+    error!("Document processing error: {}", err);
 }
