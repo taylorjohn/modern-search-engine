@@ -5,7 +5,7 @@ use std::collections::HashMap;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SearchResult {
     pub id: String,
-    pub title: String, 
+    pub title: String,
     pub content: String,
     pub scores: SearchScores,
     pub metadata: SearchMetadata,

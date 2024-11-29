@@ -6,10 +6,7 @@ pub mod telemetry;
 pub mod utils;
 pub mod vector;
 
-pub use document::{Document, DocumentMetadata, DocumentUpload, ProcessingStatus};
-pub use search::{SearchConfig, SearchEngine, SearchResult};
-pub use vector::{VectorDocument, VectorStore, VectorSearchResult};
-
-// Make modules public
-pub use self::api::ApiError;
-pub use self::document::DocumentProcessor;
+pub use document::{Document, DocumentMetadata};
+pub use search::SearchResult;
+pub use vector::{VectorDocument, VectorMetadata};
+pub use config::Config;
