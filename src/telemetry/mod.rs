@@ -1,12 +1,12 @@
 pub mod metrics;
 pub mod tracing;
 
-use crate::config::Config;
 use anyhow::Result;
+use crate::config::Config;
 
 pub fn init_telemetry(config: &Config) -> Result<()> {
-    if config.telemetry.tracing_enabled {
-        tracing::init_tracing(&config.telemetry.log_level)?;
+    if config.telemetry.log_level.parse::<tracing::Level>().is_ok() {
+        tracing::init();
     }
 
     if config.telemetry.metrics_enabled {
@@ -15,11 +15,3 @@ pub fn init_telemetry(config: &Config) -> Result<()> {
 
     Ok(())
 }
-
-pub fn shutdown_telemetry() {
-    tracing::shutdown_tracing();
-    metrics::shutdown_metrics();
-}
-
-pub use metrics::METRICS as metrics;
-pub use tracing::get_tracer;
