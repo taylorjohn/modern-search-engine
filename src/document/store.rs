@@ -13,6 +13,7 @@ impl DocumentStore {
     }
 
     pub async fn store_document(&self, document: &Document) -> Result<()> {
+        let id = Uuid::parse_str(&document.id)?;
         sqlx::query!(
             r#"
             INSERT INTO documents 
@@ -20,7 +21,7 @@ impl DocumentStore {
                 created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5::float4[], $6, $7, $8)
             "#,
-            document.id,
+            id,
             document.title,
             document.content,
             document.content_type,
@@ -56,7 +57,7 @@ impl DocumentStore {
         .await?;
 
         Ok(record.map(|r| Document {
-            id: r.id,
+            id: r.id.to_string(),
             title: r.title,
             content: r.content,
             content_type: r.content_type,

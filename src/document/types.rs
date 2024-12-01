@@ -1,7 +1,7 @@
-use chrono::{DateTime, Utc};
+// src/document/types.rs
 use serde::{Deserialize, Serialize};
+use chrono::{DateTime, Utc};
 use std::collections::HashMap;
-use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Document {
@@ -25,6 +25,7 @@ pub struct DocumentMetadata {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", content = "content")]
 pub enum DocumentUpload {
     #[serde(rename = "pdf")]
     Pdf {
@@ -55,7 +56,7 @@ impl Document {
         vector_embedding: Option<Vec<f32>>,
     ) -> Self {
         Self {
-            id: Uuid::new_v4().to_string(),
+            id: uuid::Uuid::new_v4().to_string(),
             title,
             content,
             content_type,

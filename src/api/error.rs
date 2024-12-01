@@ -1,20 +1,26 @@
+use serde::Serialize;
 use thiserror::Error;
 use warp::reject::Reject;
-use serde::Serialize;
 
 #[derive(Error, Debug)]
 pub enum ApiError {
     #[error("Search error: {0}")]
-    SearchError(String),
-    
-    #[error("Database error: {0}")]
-    DatabaseError(String),
-    
+    SearchError(anyhow::Error),
+
     #[error("Processing error: {0}")]
-    ProcessingError(String),
+    ProcessingError(anyhow::Error),
 
     #[error("Document not found: {0}")]
     DocumentNotFound(String),
+
+    #[error("Invalid request: {0}")]
+    InvalidRequest(String),
+
+    #[error("Database error: {0}")]
+    DbError(anyhow::Error),
+
+    #[error("Internal server error: {0}")]
+    InternalError(anyhow::Error),
 }
 
 impl Reject for ApiError {}
@@ -25,16 +31,4 @@ pub struct ErrorResponse {
     pub message: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub details: Option<serde_json::Value>,
-}
-
-impl From<anyhow::Error> for ApiError {
-    fn from(err: anyhow::Error) -> Self {
-        ApiError::SearchError(err.to_string())
-    }
-}
-
-impl From<sqlx::Error> for ApiError {
-    fn from(err: sqlx::Error) -> Self {
-        ApiError::DatabaseError(err.to_string())
-    }
 }

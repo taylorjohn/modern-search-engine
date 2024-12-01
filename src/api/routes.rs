@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use warp::{Filter, Reply, Rejection};
 use crate::search::SearchEngine;
-use crate::document::DocumentProcessor;
+use crate::document::{DocumentProcessor, DocumentUpload};
 use crate::api::handlers::{handle_search, handle_document_upload};
 
 pub fn create_routes(
@@ -16,7 +16,7 @@ pub fn create_routes(
 
     let upload = warp::path("documents")
         .and(warp::post())
-        .and(warp::body::json())
+        .and(warp::body::json::<DocumentUpload>())
         .and(with_document_processor(processor.clone()))
         .and_then(handle_document_upload);
 
