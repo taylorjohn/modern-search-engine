@@ -1,16 +1,16 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Document {
-    pub id: Uuid,
+    pub id: String,
     pub title: String,
     pub content: String,
     pub content_type: String,
-    pub vector_embedding: Option<Vec<f32>>,
     pub metadata: DocumentMetadata,
+    pub vector_embedding: Option<Vec<f32>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -25,28 +25,44 @@ pub struct DocumentMetadata {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum ProcessingStatus {
-    Pending,
-    Processing(f32),
-    Completed(String),
-    Failed(String),
-}
-
-#[derive(Debug, Deserialize)]
 pub enum DocumentUpload {
+    #[serde(rename = "pdf")]
     Pdf {
         base64_content: String,
         filename: String,
         metadata: Option<HashMap<String, String>>,
     },
+    #[serde(rename = "html")]
     Html {
         content: String,
         url: Option<String>,
         metadata: Option<HashMap<String, String>>,
     },
+    #[serde(rename = "text")]
     Text {
         content: String,
         title: String,
         metadata: Option<HashMap<String, String>>,
     },
+}
+
+impl Document {
+    pub fn new(
+        title: String,
+        content: String,
+        content_type: String,
+        metadata: DocumentMetadata,
+        vector_embedding: Option<Vec<f32>>,
+    ) -> Self {
+        Self {
+            id: Uuid::new_v4().to_string(),
+            title,
+            content,
+            content_type,
+            metadata,
+            vector_embedding,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        }
+    }
 }

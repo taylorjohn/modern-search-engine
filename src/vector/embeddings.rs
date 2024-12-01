@@ -1,42 +1,28 @@
 use anyhow::Result;
-use std::sync::Arc;
-use rayon::prelude::*;
 
-pub struct EmbeddingGenerator {
-    model: Arc<()>, // Replace with actual model type
-}
+pub struct EmbeddingGenerator;
 
 impl EmbeddingGenerator {
     pub fn new() -> Result<Self> {
-        Ok(Self {
-            model: Arc::new(()),
-        })
+        Ok(Self)
     }
 
-    pub async fn generate(&self, text: &str) -> Result<Vec<f32>> {
-        // Implement actual embedding generation
+    pub async fn generate(&self, _text: &str) -> Result<Vec<f32>> {
+        // Mock implementation returning 384-dimensional vector
+        // In production, this would use a proper embedding model
         Ok(vec![0.0; 384])
     }
+}
 
-    pub async fn batch_generate(&self, texts: &[String]) -> Result<Vec<Vec<f32>>> {
-        let mut results = Vec::new();
-        
-        // Process in parallel chunks
-        let chunks: Vec<_> = texts.chunks(32).collect();
-        for chunk in chunks {
-            let embeddings = chunk.par_iter()
-                .map(|text| self.generate(text))
-                .collect::<Vec<_>>();
-                
-            for embedding in embeddings {
-                results.push(embedding.await?);
-            }
-        }
-        
-        Ok(results)
-    }
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    pub fn dimension(&self) -> usize {
-        384
+    #[tokio::test]
+    async fn test_embedding_generation() -> Result<()> {
+        let generator = EmbeddingGenerator::new()?;
+        let embedding = generator.generate("test text").await?;
+        assert_eq!(embedding.len(), 384);
+        Ok(())
     }
 }

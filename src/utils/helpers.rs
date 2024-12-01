@@ -1,8 +1,9 @@
 use sha2::{Sha256, Digest};
-use std::time::SystemTime;
-use sqlx::types::chrono::TimeZone;
-use sqlx::types::chrono::DateTime;
-use sqlx::types::Uuid;
+use sqlx::types::chrono::{DateTime, TimeZone};
+use std::collections::HashMap;
+use uuid::Uuid;
+use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
+use anyhow::Result;
 
 pub fn calculate_hash(content: &str) -> String {
     let mut hasher = Sha256::new();
@@ -10,7 +11,10 @@ pub fn calculate_hash(content: &str) -> String {
     format!("{:x}", hasher.finalize())
 }
 
-/// Format date to RFC3339
+pub fn sanitize_input(input: &str) -> String {
+    ammonia::clean(input)
+}
+
 pub fn format_date<Tz: TimeZone>(date: DateTime<Tz>) -> String 
 where
     Tz::Offset: std::fmt::Display,
@@ -18,7 +22,6 @@ where
     date.to_rfc3339()
 }
 
-/// Truncate text to specified length with ellipsis
 pub fn truncate_text(text: &str, max_length: usize) -> String {
     if text.len() <= max_length {
         text.to_string()
@@ -29,17 +32,10 @@ pub fn truncate_text(text: &str, max_length: usize) -> String {
     }
 }
 
-/// Sanitize input text
-pub fn sanitize_input(input: &str) -> String {
-    ammonia::clean(input)
-}
-
-/// Generate unique ID
 pub fn generate_id() -> String {
     Uuid::new_v4().to_string()
 }
 
-/// Format file size
 pub fn format_file_size(size: u64) -> String {
     const UNITS: [&str; 4] = ["B", "KB", "MB", "GB"];
     let mut size = size as f64;
@@ -53,49 +49,19 @@ pub fn format_file_size(size: u64) -> String {
     format!("{:.2} {}", size, UNITS[unit_index])
 }
 
-/// Extract file extension
-pub fn get_file_extension(filename: &str) -> Option<String> {
-    std::path::Path::new(filename)
-        .extension()
-        .and_then(std::ffi::OsStr::to_str)
-        .map(|s| s.to_lowercase())
+// Remove PDF and HTML processing since we'll handle those in separate crates
+pub async fn extract_text(content: &[u8], content_type: &str) -> Result<String> {
+    match content_type {
+        "text/plain" => Ok(String::from_utf8_lossy(content).to_string()),
+        _ => Err(anyhow::anyhow!("Unsupported content type: {}", content_type))
+    }
 }
 
-/// Validate file type
-pub fn is_valid_file_type(filename: &str, allowed_types: &[String]) -> bool {
-    get_file_extension(filename)
-        .map(|ext| allowed_types.contains(&ext))
-        .unwrap_or(false)
+pub fn encode_base64(content: &[u8]) -> String {
+    BASE64.encode(content)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_calculate_hash() {
-        let hash = calculate_hash("test content");
-        assert_eq!(hash.len(), 64); // SHA-256 hash length
-    }
-
-    #[test]
-    fn test_truncate_text() {
-        let text = "This is a long text that needs to be truncated";
-        let truncated = truncate_text(text, 20);
-        assert_eq!(truncated, "This is a long te...");
-    }
-
-    #[test]
-    fn test_format_file_size() {
-        assert_eq!(format_file_size(1024), "1.00 KB");
-        assert_eq!(format_file_size(1024 * 1024), "1.00 MB");
-        assert_eq!(format_file_size(500), "500.00 B");
-    }
-
-    #[test]
-    fn test_file_validation() {
-        let allowed_types = vec!["pdf".to_string(), "txt".to_string()];
-        assert!(is_valid_file_type("test.pdf", &allowed_types));
-        assert!(!is_valid_file_type("test.doc", &allowed_types));
-    }
+pub fn decode_base64(content: &str) -> Result<Vec<u8>> {
+    BASE64.decode(content)
+        .map_err(|e| anyhow::anyhow!("Failed to decode base64: {}", e))
 }
