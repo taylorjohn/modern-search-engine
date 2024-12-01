@@ -36,12 +36,12 @@ impl SearchEngine {
 
     pub async fn search(
         &self,
-        query: &str,
+        _query: &str,
         limit: Option<usize>,
         offset: Option<usize>,
     ) -> Result<Vec<Document>> {
         let vector_store = self.vector_store.read().await;
-        let query_embedding = vec![0.1; 384]; // placeholder
+        let query_embedding = vec![0.1; 384]; // Mock embedding
         
         let docs = vector_store.search(
             &query_embedding,

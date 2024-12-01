@@ -45,8 +45,8 @@ impl VectorStore {
         Ok(())
     }
 
-    pub async fn search(&self, query: &[f32], limit: usize) -> Result<Vec<Document>> {
-        // Implement vector search - for now return empty results
+    pub async fn search(&self, _query: &[f32], _limit: usize) -> Result<Vec<Document>> {
+        // TODO: Implement actual vector search
         Ok(Vec::new())
     }
 }
