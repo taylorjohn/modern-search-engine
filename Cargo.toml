@@ -26,3 +26,6 @@ config = "0.13"
 url = "2.4"
 num_cpus = "1.16"
 ammonia = "3.3"
+reqwest = { version = "0.11", features = ["json"] }
+tokio-test = "0.4"
+pretty_assertions = "1.0"
