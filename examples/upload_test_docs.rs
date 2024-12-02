@@ -10,24 +10,20 @@ async fn main() -> Result<()> {
     let documents = vec![
         json!({
             "type": "text",
-            "content": {
-                "content": "Machine learning is a fascinating field of artificial intelligence",
-                "title": "ML Intro",
-                "metadata": {
-                    "author": "Test Author",
-                    "tags": ["ml", "ai"]
-                }
+            "content": "Machine learning is a fascinating field of artificial intelligence",
+            "title": "ML Intro",
+            "metadata": {
+                "author": "Test Author",
+                "tags": ["ml", "ai"]
             }
         }),
         json!({
             "type": "text",
-            "content": {
-                "content": "Natural language processing helps computers understand human language",
-                "title": "NLP Basics",
-                "metadata": {
-                    "author": "Test Author",
-                    "tags": ["nlp", "ai"]
-                }
+            "content": "Natural language processing helps computers understand human language",
+            "title": "NLP Basics",
+            "metadata": {
+                "author": "Test Author",
+                "tags": ["nlp", "ai"]
             }
         }),
     ];
@@ -38,7 +34,11 @@ async fn main() -> Result<()> {
             .send()
             .await?;
 
-        println!("Upload response: {:?}", resp.text().await?);
+        if resp.status().is_success() {
+            println!("Successfully uploaded document: {}", resp.text().await?);
+        } else {
+            println!("Failed to upload document: {}", resp.text().await?);
+        }
     }
 
     Ok(())

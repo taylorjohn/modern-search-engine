@@ -9,13 +9,14 @@ use modern_search_engine::{
 };
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use warp::Filter;  // Add this import
 
 #[tokio::main]
 async fn main() -> Result<()> {
     // Load config
     let config = Config::default();
 
-    // Initialize telemetry if enabled - remove the duplicate tracing init
+    // Initialize telemetry if enabled
     if config.telemetry.metrics_enabled {
         telemetry::init_telemetry(&config)?;
     }
@@ -28,15 +29,18 @@ async fn main() -> Result<()> {
     let processor = Arc::new(DocumentProcessor::new(vector_store));
 
     // Create routes
-    let routes = routes::create_routes(engine, processor);
+    let api_routes = routes::create_routes(engine, processor);
+
+    // Create the root route
+    let root = warp::path::end()
+        .and(warp::get())
+        .map(|| warp::reply::html(include_str!("../static/index.html")));
+
+    // Combine routes
+    let routes = root.or(api_routes);
 
     println!("Server starting on http://127.0.0.1:3030");
     
-    // Add the root route
-    let routes = warp::path::end()
-        .map(|| warp::reply::html(include_str!("../static/index.html")))
-        .or(routes);
-
     // Start server
     warp::serve(routes)
         .run(([127, 0, 0, 1], 3030))
