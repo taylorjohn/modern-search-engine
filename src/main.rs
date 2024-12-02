@@ -9,17 +9,13 @@ use modern_search_engine::{
 };
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use warp::Filter;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize tracing
-    tracing_subscriber::fmt::init();
-
     // Load config
     let config = Config::default();
 
-    // Initialize telemetry if enabled
+    // Initialize telemetry if enabled - remove the duplicate tracing init
     if config.telemetry.metrics_enabled {
         telemetry::init_telemetry(&config)?;
     }
