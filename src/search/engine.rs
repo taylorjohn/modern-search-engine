@@ -1,28 +1,9 @@
 use anyhow::Result;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use serde::{Serialize, Deserialize};
 use crate::vector::store::VectorStore;
 use crate::document::Document;
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct SearchConfig {
-    pub max_results: usize,
-    pub min_score: f32,
-    pub vector_weight: f32,
-    pub text_weight: f32,
-}
-
-impl Default for SearchConfig {
-    fn default() -> Self {
-        Self {
-            max_results: 10,
-            min_score: 0.1,
-            vector_weight: 0.6,
-            text_weight: 0.4,
-        }
-    }
-}
+use crate::config::SearchConfig;
 
 pub struct SearchEngine {
     vector_store: Arc<RwLock<VectorStore>>,
@@ -41,7 +22,7 @@ impl SearchEngine {
         offset: Option<usize>,
     ) -> Result<Vec<Document>> {
         let vector_store = self.vector_store.read().await;
-        let query_embedding = vec![0.1; 384]; // Mock embedding
+        let query_embedding = vec![0.1; self.config.vector.dimension]; // Mock embedding
         
         let docs = vector_store.search(
             &query_embedding,

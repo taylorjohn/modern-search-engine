@@ -1,9 +1,7 @@
 use sha2::{Sha256, Digest};
-use sqlx::types::chrono::{DateTime, TimeZone};
-use std::collections::HashMap;
 use uuid::Uuid;
-use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
-use anyhow::Result;
+use sqlx::types::chrono::{DateTime, TimeZone, Utc};
+use ammonia;
 
 pub fn calculate_hash(content: &str) -> String {
     let mut hasher = Sha256::new();
@@ -11,10 +9,11 @@ pub fn calculate_hash(content: &str) -> String {
     format!("{:x}", hasher.finalize())
 }
 
-pub fn sanitize_input(input: &str) -> String {
-    ammonia::clean(input)
+pub fn generate_id() -> String {
+    Uuid::new_v4().to_string()
 }
 
+/// Format date to RFC3339
 pub fn format_date<Tz: TimeZone>(date: DateTime<Tz>) -> String 
 where
     Tz::Offset: std::fmt::Display,
@@ -22,6 +21,7 @@ where
     date.to_rfc3339()
 }
 
+/// Truncate text to specified length with ellipsis
 pub fn truncate_text(text: &str, max_length: usize) -> String {
     if text.len() <= max_length {
         text.to_string()
@@ -32,8 +32,9 @@ pub fn truncate_text(text: &str, max_length: usize) -> String {
     }
 }
 
-pub fn generate_id() -> String {
-    Uuid::new_v4().to_string()
+/// Sanitize input text
+pub fn sanitize_input(input: &str) -> String {
+    ammonia::clean(input)
 }
 
 pub fn format_file_size(size: u64) -> String {
@@ -49,19 +50,15 @@ pub fn format_file_size(size: u64) -> String {
     format!("{:.2} {}", size, UNITS[unit_index])
 }
 
-// Remove PDF and HTML processing since we'll handle those in separate crates
-pub async fn extract_text(content: &[u8], content_type: &str) -> Result<String> {
-    match content_type {
-        "text/plain" => Ok(String::from_utf8_lossy(content).to_string()),
-        _ => Err(anyhow::anyhow!("Unsupported content type: {}", content_type))
-    }
+pub fn get_file_extension(filename: &str) -> Option<String> {
+    std::path::Path::new(filename)
+        .extension()
+        .and_then(std::ffi::OsStr::to_str)
+        .map(|s| s.to_lowercase())
 }
 
-pub fn encode_base64(content: &[u8]) -> String {
-    BASE64.encode(content)
-}
-
-pub fn decode_base64(content: &str) -> Result<Vec<u8>> {
-    BASE64.decode(content)
-        .map_err(|e| anyhow::anyhow!("Failed to decode base64: {}", e))
+pub fn is_valid_file_type(filename: &str, allowed_types: &[String]) -> bool {
+    get_file_extension(filename)
+        .map(|ext| allowed_types.contains(&ext))
+        .unwrap_or(false)
 }
