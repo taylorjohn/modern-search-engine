@@ -1,5 +1,5 @@
 use crate::config::search::SearchConfig;
-use crate::document::{Document, DocumentScores};
+use crate::document::{Document, DocumentScores, DocumentMetadata};
 use crate::vector::VectorStore;
 use anyhow::{Result, Context};
 use std::sync::Arc;
@@ -45,7 +45,14 @@ impl SearchEngine {
                 title: String::new(),
                 content: String::new(),
                 content_type: String::from("text"),
-                metadata: Default::default(),
+                metadata: DocumentMetadata {
+                    source_type: String::from("search"),
+                    author: None,
+                    language: None,
+                    word_count: 0,
+                    tags: Vec::new(),
+                    custom_metadata: Default::default(),
+                },
                 vector_embedding: None,
                 scores: DocumentScores {
                     text_score: 0.0,

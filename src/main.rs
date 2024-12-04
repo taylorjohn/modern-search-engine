@@ -3,13 +3,14 @@ use modern_search_engine::{
     api::routes,
     config::Config,
     search::engine::SearchEngine,
-    document::processor::DocumentProcessor,
+    document::DocumentProcessor,
     vector::store::VectorStore,
     telemetry,
 };
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use warp::Filter;  // Add this import
+use warp::Filter;
+use sqlx::PgPool;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -21,8 +22,16 @@ async fn main() -> Result<()> {
         telemetry::init_telemetry(&config)?;
     }
 
+    // Setup database pool
+    let pool = Arc::new(
+        PgPool::connect(&config.database.url)
+            .await?
+    );
+
     // Setup vector store
-    let vector_store = Arc::new(RwLock::new(VectorStore::new(config.vector.dimension)));
+    let vector_store = Arc::new(RwLock::new(
+        VectorStore::new(pool.clone(), config.vector.dimension)
+    ));
 
     // Setup search engine and document processor
     let engine = Arc::new(SearchEngine::new(vector_store.clone(), config.search));
@@ -39,11 +48,11 @@ async fn main() -> Result<()> {
     // Combine routes
     let routes = root.or(api_routes);
 
-    println!("Server starting on http://127.0.0.1:3030");
+    println!("Server starting on http://{}:{}", config.server.host, config.server.port);
     
     // Start server
     warp::serve(routes)
-        .run(([127, 0, 0, 1], 3030))
+        .run(([127, 0, 0, 1], config.server.port))
         .await;
 
     Ok(())

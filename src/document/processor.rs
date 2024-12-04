@@ -1,9 +1,10 @@
-use crate::document::types::{Document, DocumentMetadata, DocumentScores, DocumentUpload};
+use super::{Document, DocumentMetadata, DocumentScores, DocumentUpload};
 use crate::vector::VectorStore;
 use anyhow::Result;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use chrono::Utc;
+use uuid::Uuid;
 
 pub struct DocumentProcessor {
     vector_store: Arc<RwLock<VectorStore>>,
@@ -27,8 +28,10 @@ impl DocumentProcessor {
             }
         };
 
+        let word_count = content.split_whitespace().count();
+        
         let doc = Document {
-            id: uuid::Uuid::new_v4().to_string(),
+            id: Uuid::new_v4().to_string(),
             title,
             content,
             content_type: "text/plain".to_string(),
@@ -36,7 +39,7 @@ impl DocumentProcessor {
                 source_type: "upload".to_string(),
                 author: None,
                 language: None,
-                word_count: content.split_whitespace().count(),
+                word_count,
                 tags: Vec::new(),
                 custom_metadata: metadata.unwrap_or_default(),
             },
@@ -47,11 +50,10 @@ impl DocumentProcessor {
             updated_at: Utc::now(),
         };
 
-        // Generate vector embedding
-        let vector_store = self.vector_store.read().await;
-        match vector_store.add_document(&doc).await {
-            Ok(_) => Ok(doc),
-            Err(e) => Err(e),
-        }
+        // Store in vector store
+        let store = self.vector_store.read().await;
+        store.add_document(&doc).await?;
+
+        Ok(doc)
     }
 }

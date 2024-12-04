@@ -1,7 +1,6 @@
-pub mod processor;
-pub mod store;
-pub mod types;
+pub mod error;
+pub mod handlers;
+pub mod routes;
 
-pub use self::types::{Document, DocumentMetadata, DocumentScores};
-pub use self::types::DocumentUpload;
-pub use self::processor::DocumentProcessor;
+pub use self::error::ApiError;
+pub use crate::document::{Document, DocumentMetadata, DocumentScores, DocumentUpload};

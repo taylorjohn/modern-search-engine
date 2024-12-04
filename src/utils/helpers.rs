@@ -1,6 +1,6 @@
 use sha2::{Sha256, Digest};
 use uuid::Uuid;
-use sqlx::types::chrono::{DateTime, TimeZone, Utc};
+use sqlx::types::chrono::{DateTime, TimeZone};
 use ammonia;
 
 pub fn calculate_hash(content: &str) -> String {

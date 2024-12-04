@@ -7,6 +7,8 @@ pub struct Config {
     pub server: ServerConfig,
     pub database: DatabaseConfig,
     pub search: search::SearchConfig,
+    pub vector: VectorConfig,
+    pub telemetry: TelemetryConfig,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,6 +24,19 @@ pub struct DatabaseConfig {
     pub max_connections: u32,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VectorConfig {
+    pub dimension: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TelemetryConfig {
+    pub metrics_enabled: bool,
+    pub metrics_port: u16,
+    pub tracing_enabled: bool,
+    pub log_level: String,
+}
+
 impl Default for Config {
     fn default() -> Self {
         Self {
@@ -35,6 +50,15 @@ impl Default for Config {
                 max_connections: 5,
             },
             search: search::SearchConfig::default(),
+            vector: VectorConfig {
+                dimension: 384,
+            },
+            telemetry: TelemetryConfig {
+                metrics_enabled: true,
+                metrics_port: 9090,
+                tracing_enabled: true,
+                log_level: "info".to_string(),
+            },
         }
     }
 }
