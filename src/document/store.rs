@@ -1,7 +1,8 @@
+use super::types::{Document, DocumentScores};
 use anyhow::Result;
 use sqlx::PgPool;
-use crate::document::{Document, DocumentMetadata};
 use uuid::Uuid;
+use chrono::{DateTime, Utc};
 
 pub struct DocumentStore {
     pool: PgPool,
@@ -13,59 +14,97 @@ impl DocumentStore {
     }
 
     pub async fn store_document(&self, document: &Document) -> Result<()> {
-        let id = Uuid::parse_str(&document.id)?;
+        // Convert vector_embedding from f32 to f64
+        let vector_embedding = document.vector_embedding.as_ref()
+            .map(|v| v.iter().map(|&x| x as f64).collect::<Vec<f64>>());
+
         sqlx::query!(
             r#"
-            INSERT INTO documents 
-                (id, title, content, content_type, vector_embedding, metadata,
-                created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5::float4[], $6, $7, $8)
+            INSERT INTO documents (
+                id, title, content, content_type, metadata,
+                created_at, updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7)
             "#,
-            id,
+            Uuid::parse_str(&document.id)?,
             document.title,
             document.content,
             document.content_type,
-            document.vector_embedding.as_ref().map(|v| v.as_slice()),
-            serde_json::to_value(&document.metadata)?,
+            serde_json::to_value(&document.metadata)? as _,
             document.created_at,
             document.updated_at,
         )
         .execute(&self.pool)
         .await?;
 
+        // Update vector embedding separately if present
+        if let Some(embedding) = vector_embedding {
+            sqlx::query!(
+                r#"
+                UPDATE documents 
+                SET vector_embedding = $1::float8[]::vector
+                WHERE id = $2
+                "#,
+                &embedding[..] as _,
+                Uuid::parse_str(&document.id)?,
+            )
+            .execute(&self.pool)
+            .await?;
+        }
+
         Ok(())
     }
 
-    pub async fn get_document(&self, id: Uuid) -> Result<Option<Document>> {
-        let record = sqlx::query!(
+    pub async fn search(&self, query: &str, limit: i64) -> Result<Vec<Document>> {
+        let records = sqlx::query!(
             r#"
-            SELECT 
-                id,
-                title,
-                content, 
-                content_type,
-                vector_embedding as "vector_embedding?: Vec<f32>",
-                metadata as "metadata!: serde_json::Value",
-                created_at,
-                updated_at
-            FROM documents 
-            WHERE id = $1
+            WITH search_results AS (
+                SELECT 
+                    id, 
+                    title, 
+                    content, 
+                    content_type, 
+                    metadata,
+                    created_at, 
+                    updated_at,
+                    ts_rank_cd(
+                        setweight(to_tsvector('english', title), 'A') || 
+                        setweight(to_tsvector('english', content), 'B'),
+                        plainto_tsquery('english', $1)
+                    ) as similarity
+                FROM documents
+                WHERE 
+                    to_tsvector('english', content) @@ plainto_tsquery('english', $1) OR
+                    to_tsvector('english', title) @@ plainto_tsquery('english', $1)
+            )
+            SELECT *, similarity::float8 as text_score
+            FROM search_results
+            ORDER BY similarity DESC
+            LIMIT $2
             "#,
-            id
+            query,
+            limit
         )
-        .fetch_optional(&self.pool)
+        .fetch_all(&self.pool)
         .await?;
 
-        Ok(record.map(|r| Document {
-            id: r.id.to_string(),
-            title: r.title,
-            content: r.content,
-            content_type: r.content_type,
-            vector_embedding: r.vector_embedding,
-            metadata: serde_json::from_value(r.metadata)
-                .unwrap_or_else(|_| DocumentMetadata::default()),
-            created_at: r.created_at,
-            updated_at: r.updated_at,
-        }))
+        Ok(records
+            .into_iter()
+            .map(|r| Document {
+                id: r.id.to_string(),
+                title: r.title,
+                content: r.content,
+                content_type: r.content_type,
+                highlights: vec![],
+                scores: DocumentScores {
+                    text_score: r.text_score.unwrap_or(0.0) as f32,
+                    vector_score: 0.0,
+                    final_score: r.text_score.unwrap_or(0.0) as f32,
+                },
+                metadata: serde_json::from_value(r.metadata.unwrap_or_default()).unwrap_or_default(),
+                vector_embedding: None,
+                created_at: r.created_at.unwrap_or_else(|| Utc::now()),
+                updated_at: r.updated_at.unwrap_or_else(|| Utc::now()),
+            })
+            .collect())
     }
 }

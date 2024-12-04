@@ -1,8 +1,7 @@
 use anyhow::Result;
-use crate::document::Document;
+use crate::document::{Document, DocumentScores};
 use sqlx::PgPool;
-use uuid::Uuid;
-use serde_json::Value;
+use chrono::Utc;
 
 pub struct SearchExecutor {
     pool: PgPool,
@@ -13,30 +12,34 @@ impl SearchExecutor {
         Self { pool }
     }
 
-    pub async fn search(&self, query: &str, limit: usize) -> Result<Vec<Document>> {
+    pub async fn search(&self, query: &str, limit: i64) -> Result<Vec<Document>> {
         let records = sqlx::query!(
             r#"
-            WITH ranked_docs AS (
+            WITH SearchResults AS (
                 SELECT 
-                    id as "id!: Uuid",
-                    title,
-                    content,
+                    id, 
+                    title, 
+                    content, 
                     content_type,
-                    vector_embedding as "vector_embedding?: Vec<f64>",
-                    metadata as "metadata!: Value",
+                    metadata,
                     created_at,
                     updated_at,
-                    ts_rank_cd(to_tsvector('english', content), plainto_tsquery($1)) as rank
+                    ts_rank_cd(
+                        setweight(to_tsvector('english', title), 'A') || 
+                        setweight(to_tsvector('english', content), 'B'),
+                        plainto_tsquery('english', $1)
+                    )::float8 as text_similarity
                 FROM documents
                 WHERE 
-                    to_tsvector('english', content) @@ plainto_tsquery($1)
-                ORDER BY rank DESC
-                LIMIT $2
+                    to_tsvector('english', content) @@ plainto_tsquery('english', $1) OR
+                    to_tsvector('english', title) @@ plainto_tsquery('english', $1)
             )
-            SELECT * FROM ranked_docs
+            SELECT * FROM SearchResults
+            ORDER BY text_similarity DESC
+            LIMIT $2
             "#,
             query,
-            limit as i64
+            limit
         )
         .fetch_all(&self.pool)
         .await?;
@@ -48,11 +51,16 @@ impl SearchExecutor {
                 title: r.title,
                 content: r.content,
                 content_type: r.content_type,
-                metadata: serde_json::from_value(r.metadata).unwrap_or_default(),
-                vector_embedding: r.vector_embedding
-                    .map(|v| v.into_iter().map(|x| x as f32).collect()),
-                created_at: r.created_at,
-                updated_at: r.updated_at,
+                vector_embedding: None,
+                metadata: serde_json::from_value(r.metadata.unwrap_or_default()).unwrap_or_default(),
+                highlights: vec![],
+                scores: DocumentScores {
+                    text_score: r.text_similarity.unwrap_or(0.0) as f32,
+                    vector_score: 0.0,
+                    final_score: r.text_similarity.unwrap_or(0.0) as f32,
+                },
+                created_at: r.created_at.unwrap_or_else(|| Utc::now()),
+                updated_at: r.updated_at.unwrap_or_else(|| Utc::now()),
             })
             .collect())
     }

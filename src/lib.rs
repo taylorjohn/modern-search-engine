@@ -1,12 +1,11 @@
 pub mod api;
-pub mod config;
 pub mod document;
 pub mod search;
-pub mod telemetry;
-pub mod utils;
 pub mod vector;
+pub mod utils;
+pub mod config;
 
-pub use document::{Document, DocumentMetadata};
-pub use search::SearchResult;
-pub use vector::{VectorDocument, VectorMetadata};
+pub use document::{Document, DocumentMetadata, DocumentUpload, DocumentProcessor};
+pub use search::{SearchEngine, SearchExecutor};
+pub use api::error::ApiError;
 pub use config::Config;

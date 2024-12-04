@@ -1,17 +1,28 @@
-use serde::{Serialize, Deserialize};
+use thiserror::Error;
+use warp::reject::Reject;
 
-pub mod types;
-pub mod processor;
-pub mod store;
+#[derive(Error, Debug)]
+pub enum ApiError {
+    #[error("Search error: {0}")]
+    SearchError(#[from] anyhow::Error),
 
-pub use self::types::{Document, DocumentMetadata, DocumentUpload};
-pub use self::processor::DocumentProcessor;
-pub use self::store::DocumentStore;
+    #[error("Processing error: {0}")]
+    ProcessingError(#[from] anyhow::Error),
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum ProcessingStatus {
-    Pending,
-    Processing(f32),
-    Completed(String),
-    Failed(String),
+    #[error("Document not found: {0}")]
+    DocumentNotFound(String),
+
+    #[error("Invalid request: {0}")]
+    InvalidRequest(String),
+
+    #[error("Internal server error: {0}")]
+    InternalError(String),
+}
+
+impl Reject for ApiError {}
+
+#[derive(Debug, serde::Serialize)]
+pub struct ErrorResponse {
+    pub code: String,
+    pub message: String,
 }

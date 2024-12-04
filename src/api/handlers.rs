@@ -1,61 +1,72 @@
-use crate::document::DocumentProcessor;
-use crate::document::DocumentUpload;
 use crate::search::engine::SearchEngine;
-use crate::api::types::{SearchQuery, SearchResponse, SearchResult, SearchAnalytics, QueryInfo, SearchMetadata};
-use crate::api::ApiError;
+use crate::document::{DocumentUpload, DocumentProcessor};
+use crate::api::error::ApiError;
+use warp::{Reply, Rejection};
 use std::sync::Arc;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Deserialize)]
+pub struct SearchRequest {
+    pub q: String,
+    #[serde(default = "default_limit")]
+    pub limit: usize,
+    #[serde(default)]
+    pub offset: usize,
+}
+
+fn default_limit() -> usize {
+    10
+}
+
+#[derive(Debug, Serialize)]
+pub struct SearchResponse {
+    pub results: Vec<SearchResult>,
+    pub total: usize,
+    pub took_ms: u64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SearchResult {
+    pub id: String,
+    pub title: String,
+    pub content: String,
+    pub score: f32,
+}
 
 pub async fn handle_search(
-    query: SearchQuery, 
+    query: SearchRequest,
     engine: Arc<SearchEngine>
-) -> Result<impl warp::Reply, warp::Rejection> {
-    let results = engine.search(&query.q, Some(query.limit), Some(query.offset))
+) -> Result<impl Reply, Rejection> {
+    let start = std::time::Instant::now();
+
+    let search_results = engine.search(&query.q, Some(query.limit), Some(query.offset))
         .await
         .map_err(|e| warp::reject::custom(ApiError::SearchError(e)))?;
 
-    let total_count = results.len();
-    
-    let search_results: Vec<SearchResult> = results.into_iter().map(|doc| {
-        let word_count = doc.content.split_whitespace().count();
-        SearchResult {
-            id: doc.id.clone(),
-            title: doc.title.clone(),
+    let total = search_results.len();
+    let results = search_results.into_iter()
+        .map(|doc| SearchResult {
+            id: doc.id,
+            title: doc.title,
             content: doc.content,
-            scores: Default::default(),
-            metadata: SearchMetadata {
-                source_type: doc.metadata.source_type,
-                author: doc.metadata.author,
-                created_at: doc.created_at,
-                word_count,
-            },
-            highlights: vec![],
-        }
-    }).collect();
-    
+            score: doc.scores.final_score,
+        })
+        .collect();
+
     Ok(warp::reply::json(&SearchResponse {
-        query: QueryInfo {
-            original: query.q.clone(),
-            expanded: query.q,
-            vector_query: true,
-        },
-        results: search_results,
-        analytics: SearchAnalytics {
-            execution_time_ms: 0,
-            total_results: total_count,
-            max_score: 1.0,
-            search_type: "hybrid".to_string(),
-            vector_query: true,
-        },
+        results,
+        total,
+        took_ms: start.elapsed().as_millis() as u64,
     }))
 }
 
 pub async fn handle_document_upload(
     upload: DocumentUpload,
-    processor: Arc<DocumentProcessor>,
-) -> Result<impl warp::Reply, warp::Rejection> {
+    processor: Arc<DocumentProcessor>
+) -> Result<impl Reply, Rejection> {
     let result = processor.process_document(upload)
         .await
         .map_err(|e| warp::reject::custom(ApiError::ProcessingError(e)))?;
-    
+
     Ok(warp::reply::json(&result))
 }

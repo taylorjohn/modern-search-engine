@@ -1,62 +1,91 @@
 // src/pages/Search.tsx
-import React, { useState } from 'react';
-import { api } from '../services/api';
-import SearchBar from '../components/search/SearchBar';
-import SearchResults from '../components/search/SearchResults';
-import SearchAnalytics from '../components/search/SearchAnalytics';
+import React, { useState, useCallback } from 'react';
+import { SearchInput } from '@/components/search/SearchInput';
+import { SearchResults } from '@/components/search/SearchResults';
+import { SearchAnalytics } from '@/components/search/SearchAnalytics';
+import { Card, CardContent } from '@/components/ui/card';
 
-const Search: React.FC = () => {
+export default function SearchPage() {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSearch = async () => {
+  const handleSearch = useCallback(async () => {
     if (!query.trim()) return;
 
-    setLoading(true);
+    setIsLoading(true);
     setError(null);
 
     try {
-      const searchResults = await api.search(query);
-      setResults(searchResults);
+      const response = await fetch('/api/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query,
+          options: {
+            includeHighlights: true,
+            includeScores: true,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Search failed');
+      }
+
+      const data = await response.json();
+      setResults(data.results);
+      setAnalytics(data.analytics);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Search failed');
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
+  }, [query]);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Search Engine</h1>
-      
-      <SearchBar
+    <div className="max-w-7xl mx-auto p-4 space-y-6">
+      {/* Search Header */}
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold">Search</h1>
+        <p className="text-gray-500">
+          Search with transparency - see exactly how results are matched and scored
+        </p>
+      </div>
+
+      {/* Search Input */}
+      <SearchInput
         value={query}
         onChange={setQuery}
         onSearch={handleSearch}
-        isLoading={loading}
+        isLoading={isLoading}
       />
 
+      {/* Error Message */}
       {error && (
-        <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-md">
-          {error}
-        </div>
+        <Card>
+          <CardContent className="p-4 text-red-600">
+            {error}
+          </CardContent>
+        </Card>
       )}
 
-      {results?.analytics && (
-        <div className="mt-8">
-          <SearchAnalytics analytics={results.analytics} />
-        </div>
-      )}
+      {/* Search Analytics */}
+      {analytics && <SearchAnalytics analytics={analytics} />}
 
-      {results?.results && (
-        <div className="mt-8">
-          <SearchResults results={results.results} />
+      {/* Search Results */}
+      {query && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">
+            Results for "{query}"
+          </h2>
+          <SearchResults results={results} />
         </div>
       )}
     </div>
   );
-};
-
-export default Search;
+}

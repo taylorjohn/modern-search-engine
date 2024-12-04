@@ -3,20 +3,20 @@ use warp::reject::Reject;
 
 #[derive(Error, Debug)]
 pub enum ApiError {
-    #[error("Search error: {0}")]
-    SearchError(#[from] anyhow::Error),
-
-    #[error("Processing error: {0}")]
-    ProcessingError(#[from] std::io::Error),
+    #[error("Error: {0}")]
+    Error(String),
 
     #[error("Document not found: {0}")]
     DocumentNotFound(String),
 
     #[error("Invalid request: {0}")]
     InvalidRequest(String),
+}
 
-    #[error("Internal server error: {0}")]
-    InternalError(String),
+impl ApiError {
+    pub fn from_anyhow(err: anyhow::Error) -> Self {
+        ApiError::Error(err.to_string())
+    }
 }
 
 impl Reject for ApiError {}
