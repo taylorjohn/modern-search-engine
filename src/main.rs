@@ -34,8 +34,12 @@ async fn main() -> Result<()> {
     ));
 
     // Setup search engine and document processor
-    let engine = Arc::new(SearchEngine::new(vector_store.clone(), config.search));
-    let processor = Arc::new(DocumentProcessor::new(vector_store));
+    let engine = Arc::new(SearchEngine::new(
+        vector_store.clone(),
+        pool.clone(),
+        config.search
+    ));
+    let processor = Arc::new(DocumentProcessor::new(vector_store, pool));
 
     // Create routes
     let api_routes = routes::create_routes(engine, processor);
