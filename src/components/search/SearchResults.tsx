@@ -1,15 +1,45 @@
-// src/components/search/SearchResults.tsx
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Tag } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScoreBar } from './ScoreBar';
-import { SearchResult as SearchResultType } from '@/types/search';
+import { FileText, Tag, Star, ChevronDown, ChevronUp, BarChart2, Book, Hash } from 'lucide-react';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "@/components/ui/card";
 
-interface SearchResultsProps {
-  results: SearchResultType[];
+interface SearchScore {
+  field: string;
+  score: number;
+  weight: number;
 }
 
-export const SearchResults: React.FC<SearchResultsProps> = ({ results }) => {
+interface SearchResult {
+  id: string;
+  title: string;
+  content: string;
+  author?: string;
+  tags: string[];
+  scores: {
+    text_score: number;
+    vector_score: number;
+    final_score: number;
+    field_scores: SearchScore[];
+  };
+  matches: {
+    field: string;
+    term: string;
+    count: number;
+  }[];
+  highlights: string[];
+  metadata: {
+    source_type: string;
+    word_count: number;
+    created_at: string;
+    last_modified: string;
+  };
+}
+
+const SearchResults = ({ results }: { results: SearchResult[] }) => {
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
 
   const toggleExpand = (id: string) => {
@@ -22,94 +52,177 @@ export const SearchResults: React.FC<SearchResultsProps> = ({ results }) => {
     setExpandedResults(newExpanded);
   };
 
-  if (results.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-8 text-center text-gray-500">
-          No results found
-        </CardContent>
-      </Card>
-    );
-  }
+  // Renders a score bar with label and percentage
+  const ScoreBar = ({ score, label, color = "bg-blue-600" }: { score: number; label: string; color?: string }) => (
+    <div className="flex items-center gap-2 text-sm">
+      <span className="w-24 text-gray-600">{label}:</span>
+      <div className="flex-1 bg-gray-200 rounded-full h-2">
+        <div
+          className={`${color} rounded-full h-2 transition-all duration-300`}
+          style={{ width: `${score * 100}%` }}
+        />
+      </div>
+      <span className="w-16 text-right">
+        {(score * 100).toFixed(1)}%
+      </span>
+    </div>
+  );
 
   return (
     <div className="space-y-4">
       {results.map((result) => (
-        <Card key={result.id}>
+        <Card key={result.id} className="overflow-hidden">
           <CardHeader className="pb-2">
-            <div className="flex justify-between">
-              <CardTitle className="text-xl">{result.title}</CardTitle>
-              <div className="text-2xl font-bold text-blue-600">
-                {(result.scores.final_score * 100).toFixed(0)}%
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <FileText className="h-5 w-5 text-gray-500" />
+                  {result.title}
+                </CardTitle>
+                {result.author && (
+                  <div className="text-sm text-gray-500 mt-1">
+                    by {result.author}
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col items-end">
+                <div className="text-3xl font-bold text-blue-600">
+                  {(result.scores.final_score * 100).toFixed(0)}
+                </div>
+                <div className="text-xs text-gray-500">
+                  relevance score
+                </div>
               </div>
             </div>
           </CardHeader>
-          <CardContent>
-            {/* Highlights */}
-            <div className="space-y-2 mb-4">
-              {result.highlights.map((highlight, index) => (
-                <p
-                  key={index}
-                  className="text-sm text-gray-700"
-                  dangerouslySetInnerHTML={{ __html: highlight }}
-                />
-              ))}
-            </div>
 
-            {/* Tags */}
-            {result.metadata.tags?.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-4">
-                {result.metadata.tags.map((tag, index) => (
-                  <span
+          <CardContent>
+            <div className="space-y-4">
+              {/* Document Highlights */}
+              <div className="text-sm text-gray-600">
+                {result.highlights.map((highlight, index) => (
+                  <p
                     key={index}
-                    className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 rounded-full"
-                  >
-                    <Tag className="w-3 h-3" />
-                    {tag}
-                  </span>
+                    className="mb-1"
+                    dangerouslySetInnerHTML={{ __html: highlight }}
+                  />
                 ))}
               </div>
-            )}
 
-            {/* Score Breakdown */}
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <ScoreBar
-                  label="Text Match"
-                  score={result.scores.text_score}
-                  color="blue"
-                />
-                <ScoreBar
-                  label="Semantic Match"
-                  score={result.scores.vector_score}
-                  color="green"
-                />
-              </div>
-
-              {expandedResults.has(result.id) && (
-                <div className="pt-4 border-t space-y-2 text-sm text-gray-600">
-                  <div>Title match: {(result.scores.title_score * 100).toFixed(1)}%</div>
-                  <div>Content match: {(result.scores.content_score * 100).toFixed(1)}%</div>
-                  <div>Words: {result.metadata.word_count}</div>
-                  <div>Language: {result.metadata.language}</div>
-                  <div>Updated: {new Date(result.metadata.updated_at).toLocaleString()}</div>
+              {/* Tags */}
+              {result.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {result.tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100"
+                    >
+                      <Tag className="h-3 w-3 mr-1" />
+                      {tag}
+                    </span>
+                  ))}
                 </div>
               )}
 
+              {/* Expand/Collapse Button */}
               <button
                 onClick={() => toggleExpand(result.id)}
-                className="text-sm text-blue-600 hover:text-blue-800"
+                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
               >
                 {expandedResults.has(result.id) ? (
-                  <span className="flex items-center gap-1">
-                    <ChevronUp className="w-4 h-4" /> Show less
-                  </span>
+                  <>
+                    <ChevronUp className="h-4 w-4" />
+                    Hide Details
+                  </>
                 ) : (
-                  <span className="flex items-center gap-1">
-                    <ChevronDown className="w-4 h-4" /> Show more details
-                  </span>
+                  <>
+                    <ChevronDown className="h-4 w-4" />
+                    Show Scoring Details
+                  </>
                 )}
               </button>
+
+              {/* Expanded Content */}
+              {expandedResults.has(result.id) && (
+                <div className="mt-4 space-y-6 pt-4 border-t">
+                  {/* Score Breakdown */}
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-medium flex items-center gap-2">
+                      <BarChart2 className="h-4 w-4" />
+                      Score Breakdown
+                    </h4>
+                    <ScoreBar 
+                      score={result.scores.vector_score} 
+                      label="Vector Score" 
+                      color="bg-purple-600"
+                    />
+                    <ScoreBar 
+                      score={result.scores.text_score} 
+                      label="Text Score"
+                      color="bg-green-600" 
+                    />
+                    <ScoreBar 
+                      score={result.scores.final_score} 
+                      label="Final Score"
+                      color="bg-blue-600"
+                    />
+                  </div>
+
+                  {/* Field Scores */}
+                  {result.scores.field_scores.length > 0 && (
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-medium flex items-center gap-2">
+                        <Hash className="h-4 w-4" />
+                        Field Scores
+                      </h4>
+                      {result.scores.field_scores.map((fieldScore, index) => (
+                        <ScoreBar
+                          key={index}
+                          score={fieldScore.score}
+                          label={fieldScore.field}
+                          color="bg-indigo-600"
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Term Matches */}
+                  {result.matches.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium flex items-center gap-2">
+                        <Book className="h-4 w-4" />
+                        Term Matches
+                      </h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {result.matches.map((match, index) => (
+                          <div 
+                            key={index}
+                            className="flex justify-between items-center p-2 bg-gray-50 rounded text-sm"
+                          >
+                            <span className="text-gray-600">{match.term}</span>
+                            <span className="font-medium">{match.count}x in {match.field}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Document Metadata */}
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    <div className="text-gray-600">Source Type:</div>
+                    <div>{result.metadata.source_type}</div>
+                    
+                    <div className="text-gray-600">Word Count:</div>
+                    <div>{result.metadata.word_count.toLocaleString()}</div>
+                    
+                    <div className="text-gray-600">Created:</div>
+                    <div>{new Date(result.metadata.created_at).toLocaleString()}</div>
+                    
+                    <div className="text-gray-600">Modified:</div>
+                    <div>{new Date(result.metadata.last_modified).toLocaleString()}</div>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -117,3 +230,5 @@ export const SearchResults: React.FC<SearchResultsProps> = ({ results }) => {
     </div>
   );
 };
+
+export default SearchResults;
