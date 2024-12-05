@@ -1,25 +1,40 @@
 // src/hooks/useSearchLogic.ts
 import { useCallback, useRef, useEffect } from 'react';
 import { useSearch } from '../contexts/SearchContext';
-import { performSearch } from '../api/search';
-import { SearchRequest } from '../types';
 
 export const useSearchLogic = () => {
   const { state, dispatch } = useSearch();
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
 
-  const executeSearch = useCallback(async (request: SearchRequest) => {
+  const executeSearch = useCallback(async () => {
+    if (!state.query.trim()) return;
+
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
 
-      const response = await performSearch(request);
+      const response = await fetch('/api/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: state.query,
+          filters: state.filters,
+          options: state.options,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Search failed');
+      }
+
+      const data = await response.json();
+      dispatch({ type: 'SET_RESULTS', payload: data.results });
+      dispatch({ type: 'SET_ANALYTICS', payload: data.analytics });
       
-      dispatch({ type: 'SET_RESULTS', payload: response.results });
-      dispatch({ type: 'SET_ANALYTICS', payload: response.analytics });
-      
-      if (request.query.trim()) {
-        dispatch({ type: 'ADD_TO_HISTORY', payload: request.query });
+      if (state.query.trim()) {
+        dispatch({ type: 'ADD_TO_HISTORY', payload: state.query });
       }
     } catch (error) {
       dispatch({ 
@@ -29,29 +44,17 @@ export const useSearchLogic = () => {
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
-  }, [dispatch]);
+  }, [state.query, state.filters, state.options, dispatch]);
 
-  const debouncedSearch = useCallback((request: SearchRequest) => {
+  const debouncedSearch = useCallback(() => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
 
     searchTimeoutRef.current = setTimeout(() => {
-      executeSearch(request);
+      executeSearch();
     }, 300);
   }, [executeSearch]);
-
-  const handleSearch = useCallback(() => {
-    if (!state.query.trim()) return;
-
-    const request: SearchRequest = {
-      query: state.query,
-      filters: state.filters,
-      options: state.options,
-    };
-
-    debouncedSearch(request);
-  }, [state.query, state.filters, state.options, debouncedSearch]);
 
   useEffect(() => {
     return () => {
@@ -62,7 +65,6 @@ export const useSearchLogic = () => {
   }, []);
 
   return {
-    handleSearch,
     executeSearch,
     debouncedSearch,
   };

@@ -1,3 +1,4 @@
+// src/components/search/SearchAnalytics.tsx
 import React from 'react';
 import { BarChart2, Clock, Hash, Zap, Scale, Filter, Sparkles } from 'lucide-react';
 import {
@@ -6,36 +7,15 @@ import {
   CardTitle,
   CardContent,
 } from "@/components/ui/card";
-
-interface SearchAnalytics {
-  execution_time_ms: number;
-  total_results: number;
-  max_score: number;
-  search_type: string;
-  vector_query: boolean;
-  field_weights: Record<string, number>;
-  query_analysis: {
-    original: string;
-    expanded: string;
-    tokens: string[];
-    stopwords_removed: string[];
-  };
-  performance: {
-    vector_time_ms: number;
-    text_time_ms: number;
-    total_time_ms: number;
-    result_count: number;
-  };
-}
+import { SearchAnalytics as SearchAnalyticsType } from '../../types';
 
 interface Props {
-  analytics: SearchAnalytics;
+  analytics: SearchAnalyticsType;
 }
 
 const SearchAnalytics: React.FC<Props> = ({ analytics }) => {
   return (
     <div className="space-y-6">
-      {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -70,7 +50,7 @@ const SearchAnalytics: React.FC<Props> = ({ analytics }) => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Top Score
+              Best Score
             </CardTitle>
             <Scale className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -104,7 +84,6 @@ const SearchAnalytics: React.FC<Props> = ({ analytics }) => {
         </Card>
       </div>
 
-      {/* Performance Breakdown */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base font-medium flex items-center gap-2">
@@ -113,38 +92,35 @@ const SearchAnalytics: React.FC<Props> = ({ analytics }) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <div className="text-sm text-gray-500">Vector Search</div>
-                <div className="text-lg font-semibold">
-                  {analytics.performance.vector_time_ms}ms
-                </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <div className="text-sm text-gray-500">Vector Search</div>
+              <div className="text-lg font-semibold">
+                {analytics.performance.vector_time_ms}ms
               </div>
-              <div>
-                <div className="text-sm text-gray-500">Text Search</div>
-                <div className="text-lg font-semibold">
-                  {analytics.performance.text_time_ms}ms
-                </div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-500">Text Search</div>
+              <div className="text-lg font-semibold">
+                {analytics.performance.text_time_ms}ms
               </div>
-              <div>
-                <div className="text-sm text-gray-500">Total Time</div>
-                <div className="text-lg font-semibold">
-                  {analytics.performance.total_time_ms}ms
-                </div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-500">Total Time</div>
+              <div className="text-lg font-semibold">
+                {analytics.performance.total_time_ms}ms
               </div>
-              <div>
-                <div className="text-sm text-gray-500">Results</div>
-                <div className="text-lg font-semibold">
-                  {analytics.performance.result_count}
-                </div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-500">Results</div>
+              <div className="text-lg font-semibold">
+                {analytics.performance.result_count}
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Query Analysis */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base font-medium flex items-center gap-2">
@@ -202,7 +178,6 @@ const SearchAnalytics: React.FC<Props> = ({ analytics }) => {
         </CardContent>
       </Card>
 
-      {/* Field Weights */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base font-medium flex items-center gap-2">
@@ -220,7 +195,7 @@ const SearchAnalytics: React.FC<Props> = ({ analytics }) => {
                 <div className="flex items-center gap-2">
                   <div className="flex-1 h-2 bg-gray-200 rounded-full">
                     <div
-                      className="h-2 bg-blue-600 rounded-full"
+                      className="h-2 bg-blue-600 rounded-full transition-all duration-300"
                       style={{ width: `${weight * 100}%` }}
                     />
                   </div>

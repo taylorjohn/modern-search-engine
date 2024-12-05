@@ -4,23 +4,15 @@ import { Search, Loader2, Command } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useSearch } from '../../contexts/SearchContext';
+import { useSearchLogic } from '../../hooks/useSearchLogic';
 
-interface SearchBarProps {
-  onSearch: () => void;
-  placeholder?: string;
-  showCommand?: boolean;
-}
-
-const SearchBar: React.FC<SearchBarProps> = ({
-  onSearch,
-  placeholder = 'Search documents...',
-  showCommand = true,
-}) => {
+const SearchBar = () => {
   const { state, dispatch } = useSearch();
+  const { executeSearch } = useSearchLogic();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch();
+    executeSearch();
   };
 
   return (
@@ -34,17 +26,15 @@ const SearchBar: React.FC<SearchBarProps> = ({
           type="text"
           value={state.query}
           onChange={(e) => dispatch({ type: 'SET_QUERY', payload: e.target.value })}
-          placeholder={placeholder}
+          placeholder="Search documents..."
           className="pl-10 pr-20"
           disabled={state.isLoading}
         />
 
-        {showCommand && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2 text-xs text-gray-400">
-            <Command className="h-3 w-3" />
-            <span>+ Space</span>
-          </div>
-        )}
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2 text-xs text-gray-400">
+          <Command className="h-3 w-3" />
+          <span>+ Space</span>
+        </div>
       </div>
 
       {state.query && (

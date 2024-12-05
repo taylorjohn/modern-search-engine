@@ -45,6 +45,11 @@ const initialState: SearchState = {
   searchHistory: [],
 };
 
+const SearchContext = createContext<{
+  state: SearchState;
+  dispatch: React.Dispatch<SearchAction>;
+} | undefined>(undefined);
+
 const searchReducer = (state: SearchState, action: SearchAction): SearchState => {
   switch (action.type) {
     case 'SET_QUERY':
@@ -69,17 +74,12 @@ const searchReducer = (state: SearchState, action: SearchAction): SearchState =>
     case 'RESET_SEARCH':
       return {
         ...initialState,
-        options: state.options, // Preserve options on reset
+        options: state.options,
       };
     default:
       return state;
   }
 };
-
-const SearchContext = createContext<{
-  state: SearchState;
-  dispatch: React.Dispatch<SearchAction>;
-} | null>(null);
 
 export const SearchProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(searchReducer, initialState);

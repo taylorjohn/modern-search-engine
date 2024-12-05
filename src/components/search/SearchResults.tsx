@@ -1,3 +1,4 @@
+// src/components/search/SearchResults.tsx
 import React, { useState } from 'react';
 import { FileText, Tag, Star, ChevronDown, ChevronUp, BarChart2, Book, Hash } from 'lucide-react';
 import {
@@ -6,40 +7,13 @@ import {
   CardTitle,
   CardContent,
 } from "@/components/ui/card";
+import { SearchResult } from '../../types';
 
-interface SearchScore {
-  field: string;
-  score: number;
-  weight: number;
+interface Props {
+  results: SearchResult[];
 }
 
-interface SearchResult {
-  id: string;
-  title: string;
-  content: string;
-  author?: string;
-  tags: string[];
-  scores: {
-    text_score: number;
-    vector_score: number;
-    final_score: number;
-    field_scores: SearchScore[];
-  };
-  matches: {
-    field: string;
-    term: string;
-    count: number;
-  }[];
-  highlights: string[];
-  metadata: {
-    source_type: string;
-    word_count: number;
-    created_at: string;
-    last_modified: string;
-  };
-}
-
-const SearchResults = ({ results }: { results: SearchResult[] }) => {
+const SearchResults: React.FC<Props> = ({ results }) => {
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
 
   const toggleExpand = (id: string) => {
@@ -52,7 +26,6 @@ const SearchResults = ({ results }: { results: SearchResult[] }) => {
     setExpandedResults(newExpanded);
   };
 
-  // Renders a score bar with label and percentage
   const ScoreBar = ({ score, label, color = "bg-blue-600" }: { score: number; label: string; color?: string }) => (
     <div className="flex items-center gap-2 text-sm">
       <span className="w-24 text-gray-600">{label}:</span>
@@ -98,7 +71,6 @@ const SearchResults = ({ results }: { results: SearchResult[] }) => {
 
           <CardContent>
             <div className="space-y-4">
-              {/* Document Highlights */}
               <div className="text-sm text-gray-600">
                 {result.highlights.map((highlight, index) => (
                   <p
@@ -109,7 +81,6 @@ const SearchResults = ({ results }: { results: SearchResult[] }) => {
                 ))}
               </div>
 
-              {/* Tags */}
               {result.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {result.tags.map((tag, index) => (
@@ -124,7 +95,6 @@ const SearchResults = ({ results }: { results: SearchResult[] }) => {
                 </div>
               )}
 
-              {/* Expand/Collapse Button */}
               <button
                 onClick={() => toggleExpand(result.id)}
                 className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
@@ -142,10 +112,8 @@ const SearchResults = ({ results }: { results: SearchResult[] }) => {
                 )}
               </button>
 
-              {/* Expanded Content */}
               {expandedResults.has(result.id) && (
                 <div className="mt-4 space-y-6 pt-4 border-t">
-                  {/* Score Breakdown */}
                   <div className="space-y-3">
                     <h4 className="text-sm font-medium flex items-center gap-2">
                       <BarChart2 className="h-4 w-4" />
@@ -168,7 +136,6 @@ const SearchResults = ({ results }: { results: SearchResult[] }) => {
                     />
                   </div>
 
-                  {/* Field Scores */}
                   {result.scores.field_scores.length > 0 && (
                     <div className="space-y-3">
                       <h4 className="text-sm font-medium flex items-center gap-2">
@@ -186,7 +153,6 @@ const SearchResults = ({ results }: { results: SearchResult[] }) => {
                     </div>
                   )}
 
-                  {/* Term Matches */}
                   {result.matches.length > 0 && (
                     <div className="space-y-2">
                       <h4 className="text-sm font-medium flex items-center gap-2">
@@ -200,14 +166,15 @@ const SearchResults = ({ results }: { results: SearchResult[] }) => {
                             className="flex justify-between items-center p-2 bg-gray-50 rounded text-sm"
                           >
                             <span className="text-gray-600">{match.term}</span>
-                            <span className="font-medium">{match.count}x in {match.field}</span>
+                            <span className="font-medium">
+                              {match.count}x in {match.field}
+                            </span>
                           </div>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  {/* Document Metadata */}
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                     <div className="text-gray-600">Source Type:</div>
                     <div>{result.metadata.source_type}</div>
@@ -219,7 +186,9 @@ const SearchResults = ({ results }: { results: SearchResult[] }) => {
                     <div>{new Date(result.metadata.created_at).toLocaleString()}</div>
                     
                     <div className="text-gray-600">Modified:</div>
-                    <div>{new Date(result.metadata.last_modified).toLocaleString()}</div>
+                    <div>
+                      {new Date(result.metadata.last_modified).toLocaleString()}
+                    </div>
                   </div>
                 </div>
               )}
