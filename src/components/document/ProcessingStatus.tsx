@@ -1,14 +1,39 @@
 // src/components/document/ProcessingStatus.tsx
 import React from 'react';
-import { Loader2, CheckCircle, XCircle, AlertTriangle, FileText, BarChart } from 'lucide-react';
+import { 
+  Loader2, 
+  CheckCircle, 
+  XCircle, 
+  AlertTriangle, 
+  FileText, 
+  BarChart 
+} from 'lucide-react';
 import {
   Card,
   CardHeader,
   CardTitle,
   CardContent,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ProcessingStatus as ProcessingStatusType } from '../../types';
+} from "../ui/card";
+import { Button } from "../ui/button";
+
+interface ProcessingResult {
+  id: string;
+  title: string;
+  content_type: string;
+  word_count: number;
+  vector_embedding: number[];
+  language?: string;
+  processing_time_ms: number;
+}
+
+interface ProcessingStatusType {
+  id: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  progress: number;
+  message?: string;
+  result?: ProcessingResult;
+  error?: string;
+}
 
 interface Props {
   status: ProcessingStatusType;
@@ -122,10 +147,10 @@ const ProcessingStatus: React.FC<Props> = ({
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm font-medium">
                     <BarChart className="h-4 w-4" />
-                    Vector Embedding
+                    Vector Embedding Preview
                   </div>
-                  <div className="h-8 bg-gray-100 rounded overflow-hidden">
-                    {status.result.vector_embedding.slice(0, 50).map((value, i) => (
+                  <div className="h-8 bg-gray-100 rounded overflow-hidden flex">
+                    {status.result.vector_embedding.slice(0, 50).map((value: number, i: number) => (
                       <div
                         key={i}
                         className="inline-block h-full w-1 bg-blue-500"
@@ -136,7 +161,7 @@ const ProcessingStatus: React.FC<Props> = ({
                       />
                     ))}
                     {status.result.vector_embedding.length > 50 && (
-                      <span className="text-xs text-gray-500 ml-2">
+                      <span className="text-xs text-gray-500 ml-2 flex items-center">
                         +{status.result.vector_embedding.length - 50} more dimensions
                       </span>
                     )}

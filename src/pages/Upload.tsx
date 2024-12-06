@@ -6,11 +6,11 @@ import {
   CardHeader,
   CardTitle,
   CardContent,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+} from "../components/ui/card";
+import { Button } from "../components/ui/button";
 import DocumentUpload from '../components/document/DocumentUpload';
 import ProcessingStatus from '../components/document/ProcessingStatus';
-import { ProcessingStatus as ProcessingStatusType } from '../types';
+import type { ProcessingStatus as ProcessingStatusType } from '../types';
 
 const Upload = () => {
   const [uploadQueue, setUploadQueue] = useState<ProcessingStatusType[]>([]);
@@ -38,17 +38,18 @@ const Upload = () => {
         // Start upload
         updateStatus(processingId, 'processing', 10);
 
-        const response = await fetch('/api/documents/upload', {
-          method: 'POST',
-          body: formData,
+        // Simulate upload delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Simulate successful processing
+        updateStatus(processingId, 'completed', 100, {
+          id: processingId,
+          title: file.name,
+          content_type: file.type,
+          word_count: Math.floor(Math.random() * 1000) + 100,
+          vector_embedding: Array.from({ length: 10 }, () => Math.random()),
+          processing_time_ms: Math.floor(Math.random() * 1000) + 500
         });
-
-        if (!response.ok) {
-          throw new Error(`Failed to upload ${file.name}`);
-        }
-
-        const data = await response.json();
-        updateStatus(processingId, 'completed', 100, data);
 
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Upload failed';
@@ -64,7 +65,7 @@ const Upload = () => {
     id: string,
     status: ProcessingStatusType['status'],
     progress: number,
-    result?: any,
+    result?: ProcessingStatusType['result'],
     error?: string
   ) => {
     setUploadQueue(prev => prev.map(item => 
@@ -92,6 +93,8 @@ const Upload = () => {
           <DocumentUpload
             onFilesSelected={handleFilesSelected}
             disabled={isUploading}
+            accept=".pdf,.txt,.html"
+            maxSize={10 * 1024 * 1024} // 10MB
           />
         </CardContent>
       </Card>
@@ -125,10 +128,44 @@ const Upload = () => {
               key={item.id}
               status={item}
               onRetry={() => {
-                // Implement retry logic
+                updateStatus(item.id, 'pending', 0);
+                handleFilesSelected([new File([], item.id)]);
               }}
             />
           ))}
+
+          {/* Upload Statistics */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="text-base">Upload Statistics</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <div className="text-sm text-gray-500">Total</div>
+                  <div className="text-2xl font-semibold">{uploadQueue.length}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-500">Completed</div>
+                  <div className="text-2xl font-semibold text-green-600">
+                    {uploadQueue.filter(item => item.status === 'completed').length}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-500">Processing</div>
+                  <div className="text-2xl font-semibold text-blue-600">
+                    {uploadQueue.filter(item => item.status === 'processing').length}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-500">Failed</div>
+                  <div className="text-2xl font-semibold text-red-600">
+                    {uploadQueue.filter(item => item.status === 'failed').length}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

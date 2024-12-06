@@ -1,11 +1,16 @@
 // src/types.ts
-
 export interface SearchResult {
   id: string;
   title: string;
   content: string;
-  author?: string;
+  author: string;
   tags: string[];
+  highlights: string[];
+  matches: Array<{
+    field: string;
+    term: string;
+    count: number;
+  }>;
   scores: {
     text_score: number;
     vector_score: number;
@@ -16,12 +21,6 @@ export interface SearchResult {
       weight: number;
     }>;
   };
-  matches: Array<{
-    field: string;
-    term: string;
-    count: number;
-  }>;
-  highlights: string[];
   metadata: {
     source_type: string;
     word_count: number;
@@ -59,29 +58,6 @@ export interface SearchRequest {
   limit?: number;
 }
 
-export interface SearchFilters {
-  author?: string;
-  dateRange?: {
-    from: Date | null;
-    to: Date | null;
-  };
-  contentType?: string[];
-  tags?: string[];
-  source_type?: string[];
-}
-
-export interface SearchOptions {
-  useVector: boolean;
-  boost: {
-    title: number;
-    content: number;
-    tags: number;
-  };
-  minScore?: number;
-  expandQuery?: boolean;
-  highlightResults?: boolean;
-}
-
 export interface SearchResponse {
   results: SearchResult[];
   analytics: SearchAnalytics;
@@ -93,51 +69,38 @@ export interface SearchResponse {
   };
 }
 
+export interface SearchFilters {
+  author?: string;
+  dateRange?: {
+    from: Date | null;
+    to: Date | null;
+  };
+  contentType?: string[];
+  tags?: string[];
+}
+
+export interface SearchOptions {
+  useVector: boolean;
+  boost: {
+    title: number;
+    content: number;
+    tags: number;
+  };
+}
+
 export interface ProcessingStatus {
   id: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
   progress: number;
   message?: string;
-  result?: ProcessedDocument;
-  error?: string;
-}
-
-export interface ProcessedDocument {
-  id: string;
-  title: string;
-  content_type: string;
-  word_count: number;
-  vector_embedding: number[];
-  language?: string;
-  processing_time_ms: number;
-  metadata: {
-    source_type: string;
-    author?: string;
-    tags: string[];
+  result?: {
+    id: string;
+    title: string;
+    content_type: string;
+    word_count: number;
+    vector_embedding: number[];
+    language?: string;
+    processing_time_ms: number;
   };
-}
-
-// API Error types
-export interface ApiError {
-  code: string;
-  message: string;
-  details?: Record<string, any>;
-}
-
-// Component prop types
-export interface SearchBarProps {
-  value: string;
-  onChange: (value: string) => void;
-  onSearch: () => void;
-  isLoading?: boolean;
-  placeholder?: string;
-  showCommand?: boolean;
-}
-
-export interface SearchResultsProps {
-  results: SearchResult[];
-}
-
-export interface SearchAnalyticsProps {
-  analytics: SearchAnalytics;
+  error?: string;
 }

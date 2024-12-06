@@ -4,7 +4,8 @@ import { Search, RefreshCcw, Filter } from 'lucide-react';
 import { Button } from './components/ui/button';
 import { Input } from './components/ui/input';
 import { Card, CardContent } from './components/ui/card';
-import { mockDocuments, type SearchResult } from './mockData';
+import { mockDocuments } from './mockData';
+import type { SearchResult } from './types';
 
 function App() {
   const [query, setQuery] = useState('');
