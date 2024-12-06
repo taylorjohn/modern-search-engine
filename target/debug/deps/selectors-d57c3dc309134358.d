@@ -1,0 +1,18 @@
+/Users/dev/jt/modern-search-engine/target/debug/deps/libselectors-d57c3dc309134358.rmeta: /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/lib.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/attr.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/bloom.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/builder.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/context.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/matching.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/nth_index_cache.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/parser.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/sink.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/tree.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/visitor.rs /Users/dev/jt/modern-search-engine/target/debug/build/selectors-0bc4935ad0d81f0e/out/ascii_case_insensitive_html_attributes.rs
+
+/Users/dev/jt/modern-search-engine/target/debug/deps/selectors-d57c3dc309134358.d: /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/lib.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/attr.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/bloom.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/builder.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/context.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/matching.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/nth_index_cache.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/parser.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/sink.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/tree.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/visitor.rs /Users/dev/jt/modern-search-engine/target/debug/build/selectors-0bc4935ad0d81f0e/out/ascii_case_insensitive_html_attributes.rs
+
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/lib.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/attr.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/bloom.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/builder.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/context.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/matching.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/nth_index_cache.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/parser.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/sink.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/tree.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/selectors-0.25.0/visitor.rs:
+/Users/dev/jt/modern-search-engine/target/debug/build/selectors-0bc4935ad0d81f0e/out/ascii_case_insensitive_html_attributes.rs:
+
+# env-dep:OUT_DIR=/Users/dev/jt/modern-search-engine/target/debug/build/selectors-0bc4935ad0d81f0e/out

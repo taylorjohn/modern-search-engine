@@ -1,0 +1,15 @@
+/Users/dev/jt/modern-search-engine/target/debug/deps/libmarkup5ever-3df08f6b7c719205.rmeta: /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/markup5ever-0.11.0/lib.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/markup5ever-0.11.0/data/mod.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/markup5ever-0.11.0/interface/mod.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/markup5ever-0.11.0/interface/tree_builder.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/markup5ever-0.11.0/serialize.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/markup5ever-0.11.0/util/buffer_queue.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/markup5ever-0.11.0/util/smallcharset.rs /Users/dev/jt/modern-search-engine/target/debug/build/markup5ever-1c0ce1354bd504d0/out/generated.rs /Users/dev/jt/modern-search-engine/target/debug/build/markup5ever-1c0ce1354bd504d0/out/named_entities.rs
+
+/Users/dev/jt/modern-search-engine/target/debug/deps/markup5ever-3df08f6b7c719205.d: /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/markup5ever-0.11.0/lib.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/markup5ever-0.11.0/data/mod.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/markup5ever-0.11.0/interface/mod.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/markup5ever-0.11.0/interface/tree_builder.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/markup5ever-0.11.0/serialize.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/markup5ever-0.11.0/util/buffer_queue.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/markup5ever-0.11.0/util/smallcharset.rs /Users/dev/jt/modern-search-engine/target/debug/build/markup5ever-1c0ce1354bd504d0/out/generated.rs /Users/dev/jt/modern-search-engine/target/debug/build/markup5ever-1c0ce1354bd504d0/out/named_entities.rs
+
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/markup5ever-0.11.0/lib.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/markup5ever-0.11.0/data/mod.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/markup5ever-0.11.0/interface/mod.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/markup5ever-0.11.0/interface/tree_builder.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/markup5ever-0.11.0/serialize.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/markup5ever-0.11.0/util/buffer_queue.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/markup5ever-0.11.0/util/smallcharset.rs:
+/Users/dev/jt/modern-search-engine/target/debug/build/markup5ever-1c0ce1354bd504d0/out/generated.rs:
+/Users/dev/jt/modern-search-engine/target/debug/build/markup5ever-1c0ce1354bd504d0/out/named_entities.rs:
+
+# env-dep:OUT_DIR=/Users/dev/jt/modern-search-engine/target/debug/build/markup5ever-1c0ce1354bd504d0/out

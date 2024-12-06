@@ -1,0 +1,12 @@
+/Users/dev/jt/modern-search-engine/target/debug/deps/liblibc-37d941d9642f1bde.rmeta: /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.166/src/lib.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.166/src/macros.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.166/src/fixed_width_ints.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.166/src/unix/mod.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.166/src/unix/bsd/mod.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.166/src/unix/bsd/apple/mod.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.166/src/unix/bsd/apple/b64/mod.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.166/src/unix/bsd/apple/b64/aarch64/mod.rs
+
+/Users/dev/jt/modern-search-engine/target/debug/deps/libc-37d941d9642f1bde.d: /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.166/src/lib.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.166/src/macros.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.166/src/fixed_width_ints.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.166/src/unix/mod.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.166/src/unix/bsd/mod.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.166/src/unix/bsd/apple/mod.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.166/src/unix/bsd/apple/b64/mod.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.166/src/unix/bsd/apple/b64/aarch64/mod.rs
+
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.166/src/lib.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.166/src/macros.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.166/src/fixed_width_ints.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.166/src/unix/mod.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.166/src/unix/bsd/mod.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.166/src/unix/bsd/apple/mod.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.166/src/unix/bsd/apple/b64/mod.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.166/src/unix/bsd/apple/b64/aarch64/mod.rs:

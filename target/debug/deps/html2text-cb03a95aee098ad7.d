@@ -1,0 +1,11 @@
+/Users/dev/jt/modern-search-engine/target/debug/deps/libhtml2text-cb03a95aee098ad7.rmeta: /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/html2text-0.6.0/src/lib.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/html2text-0.6.0/src/macros.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/html2text-0.6.0/src/render/mod.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/html2text-0.6.0/src/render/text_renderer.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/html2text-0.6.0/src/markup5ever_rcdom.rs
+
+/Users/dev/jt/modern-search-engine/target/debug/deps/libhtml2text-cb03a95aee098ad7.rlib: /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/html2text-0.6.0/src/lib.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/html2text-0.6.0/src/macros.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/html2text-0.6.0/src/render/mod.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/html2text-0.6.0/src/render/text_renderer.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/html2text-0.6.0/src/markup5ever_rcdom.rs
+
+/Users/dev/jt/modern-search-engine/target/debug/deps/html2text-cb03a95aee098ad7.d: /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/html2text-0.6.0/src/lib.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/html2text-0.6.0/src/macros.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/html2text-0.6.0/src/render/mod.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/html2text-0.6.0/src/render/text_renderer.rs /Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/html2text-0.6.0/src/markup5ever_rcdom.rs
+
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/html2text-0.6.0/src/lib.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/html2text-0.6.0/src/macros.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/html2text-0.6.0/src/render/mod.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/html2text-0.6.0/src/render/text_renderer.rs:
+/Users/dev/.cargo/registry/src/index.crates.io-6f17d22bba15001f/html2text-0.6.0/src/markup5ever_rcdom.rs:
