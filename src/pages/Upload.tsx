@@ -1,18 +1,14 @@
 // src/pages/Upload.tsx
 import React, { useState } from 'react';
 import { Upload as UploadIcon, AlertCircle } from 'lucide-react';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "../components/ui/card";
-import { Button } from "../components/ui/button";
 import DocumentUpload from '../components/document/DocumentUpload';
 import ProcessingStatus from '../components/document/ProcessingStatus';
+import { Card, CardContent } from '../components/ui/card';
+import { Button } from '../components/ui/button';
 import type { ProcessingStatus as ProcessingStatusType } from '../types';
+import { api } from '../services/api';
 
-const Upload = () => {
+export function Upload() {
   const [uploadQueue, setUploadQueue] = useState<ProcessingStatusType[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +20,7 @@ const Upload = () => {
     for (const file of files) {
       const processingId = `upload-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
-      // Initialize processing status
+      // Initialize status
       setUploadQueue(prev => [...prev, {
         id: processingId,
         status: 'pending',
@@ -32,24 +28,35 @@ const Upload = () => {
       }]);
 
       try {
-        const formData = new FormData();
-        formData.append('file', file);
-
         // Start upload
         updateStatus(processingId, 'processing', 10);
-
-        // Simulate upload delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Simulate successful processing
-        updateStatus(processingId, 'completed', 100, {
-          id: processingId,
-          title: file.name,
-          content_type: file.type,
-          word_count: Math.floor(Math.random() * 1000) + 100,
-          vector_embedding: Array.from({ length: 10 }, () => Math.random()),
-          processing_time_ms: Math.floor(Math.random() * 1000) + 500
-        });
+        const result = await api.uploadDocument(file);
+        
+        // Poll for status
+        const interval = setInterval(async () => {
+          try {
+            const status = await api.getProcessingStatus(result.id);
+            updateStatus(
+              processingId, 
+              status.status, 
+              status.progress, 
+              status.result
+            );
+            
+            if (status.status === 'completed' || status.status === 'failed') {
+              clearInterval(interval);
+            }
+          } catch (err) {
+            clearInterval(interval);
+            updateStatus(
+              processingId, 
+              'failed', 
+              0, 
+              undefined, 
+              'Failed to get status update'
+            );
+          }
+        }, 1000);
 
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Upload failed';
@@ -65,7 +72,7 @@ const Upload = () => {
     id: string,
     status: ProcessingStatusType['status'],
     progress: number,
-    result?: ProcessingStatusType['result'],
+    result?: any,
     error?: string
   ) => {
     setUploadQueue(prev => prev.map(item => 
@@ -80,11 +87,11 @@ const Upload = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-4xl">
+    <div className="max-w-4xl mx-auto">
       <header className="mb-8">
         <h1 className="text-4xl font-bold mb-2">Upload Documents</h1>
         <p className="text-gray-600">
-          Support for PDF, HTML, and text documents with automatic processing
+          Upload documents for vector search processing
         </p>
       </header>
 
@@ -93,8 +100,6 @@ const Upload = () => {
           <DocumentUpload
             onFilesSelected={handleFilesSelected}
             disabled={isUploading}
-            accept=".pdf,.txt,.html"
-            maxSize={10 * 1024 * 1024} // 10MB
           />
         </CardContent>
       </Card>
@@ -129,47 +134,12 @@ const Upload = () => {
               status={item}
               onRetry={() => {
                 updateStatus(item.id, 'pending', 0);
-                handleFilesSelected([new File([], item.id)]);
+                // Implement retry logic
               }}
             />
           ))}
-
-          {/* Upload Statistics */}
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle className="text-base">Upload Statistics</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <div className="text-sm text-gray-500">Total</div>
-                  <div className="text-2xl font-semibold">{uploadQueue.length}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500">Completed</div>
-                  <div className="text-2xl font-semibold text-green-600">
-                    {uploadQueue.filter(item => item.status === 'completed').length}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500">Processing</div>
-                  <div className="text-2xl font-semibold text-blue-600">
-                    {uploadQueue.filter(item => item.status === 'processing').length}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500">Failed</div>
-                  <div className="text-2xl font-semibold text-red-600">
-                    {uploadQueue.filter(item => item.status === 'failed').length}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       )}
     </div>
   );
-};
-
-export default Upload;
+}

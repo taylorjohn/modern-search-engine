@@ -27,8 +27,48 @@
   }
 }
 
+@layer base {
+  * {
+    @apply border-input;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+@layer components {
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-lg hover:scale-[1.02];
+  }
+
+  .score-bar {
+    @apply relative overflow-hidden;
+  }
+
+  .score-bar::after {
+    content: '';
+    @apply animate-shimmer absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent;
+  }
+
+  .loading-spinner {
+    @apply animate-spin;
+  }
+
+  .highlight {
+    @apply bg-yellow-100 px-1 rounded transition-colors duration-200 hover:bg-yellow-200;
+  }
+
+  .expandable-content {
+    @apply transition-all duration-300 ease-in-out overflow-hidden;
+  }
+}
+
 @layer utilities {
-  .prose code {
-    @apply rounded bg-gray-100 px-1 py-0.5 font-mono text-sm;
+  .prose {
+    @apply max-w-none;
+  }
+
+  .prose a {
+    @apply text-primary hover:text-primary/80 transition-colors;
   }
 }

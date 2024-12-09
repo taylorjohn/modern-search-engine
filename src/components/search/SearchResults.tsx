@@ -1,203 +1,186 @@
-// src/components/search/SearchResults.tsx
 import React, { useState } from 'react';
-import { FileText, Tag, Star, ChevronDown, ChevronUp, BarChart2, Book, Hash } from 'lucide-react';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "@/components/ui/card";
-import { SearchResult } from '../../types';
+import { FileText, ChevronDown, ChevronUp, BarChart2, Tag } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
-interface Props {
+interface SearchResult {
+  id: string;
+  title: string;
+  content: string;
+  scores: {
+    text_score: number;
+    vector_score: number;
+    final_score: number;
+  };
+  metadata: {
+    source_type: string;
+    author?: string;
+    created_at: string;
+    word_count: number;
+    tags?: string[];
+  };
+  highlights?: string[];
+}
+
+interface ScoreBarProps {
+  score: number;
+  label: string;
+  color?: string;
+  delay?: number;
+}
+
+const ScoreBar = ({ score, label, color = "bg-blue-600", delay = 0 }: ScoreBarProps) => (
+  <div 
+    className="flex items-center gap-2 animate-slide-in-right"
+    style={{ animationDelay: `${delay}ms` }}
+  >
+    <span className="w-24 text-sm text-gray-600">{label}:</span>
+    <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
+      <div
+        className={`${color} h-full transition-all duration-1000 ease-out`}
+        style={{ 
+          width: `${score * 100}%`,
+          transform: 'translateX(-100%)',
+          animation: 'slideRight 1s forwards',
+          animationDelay: `${delay}ms`
+        }}
+      />
+    </div>
+    <span className="w-16 text-sm text-gray-600 text-right">
+      {(score * 100).toFixed(1)}%
+    </span>
+  </div>
+);
+
+interface SearchResultsProps {
   results: SearchResult[];
 }
 
-const SearchResults: React.FC<Props> = ({ results }) => {
+export default function SearchResults({ results }: SearchResultsProps) {
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
 
   const toggleExpand = (id: string) => {
-    const newExpanded = new Set(expandedResults);
-    if (newExpanded.has(id)) {
-      newExpanded.delete(id);
-    } else {
-      newExpanded.add(id);
-    }
-    setExpandedResults(newExpanded);
+    setExpandedResults(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
   };
-
-  const ScoreBar = ({ score, label, color = "bg-blue-600" }: { score: number; label: string; color?: string }) => (
-    <div className="flex items-center gap-2 text-sm">
-      <span className="w-24 text-gray-600">{label}:</span>
-      <div className="flex-1 bg-gray-200 rounded-full h-2">
-        <div
-          className={`${color} rounded-full h-2 transition-all duration-300`}
-          style={{ width: `${score * 100}%` }}
-        />
-      </div>
-      <span className="w-16 text-right">
-        {(score * 100).toFixed(1)}%
-      </span>
-    </div>
-  );
 
   return (
     <div className="space-y-4">
-      {results.map((result) => (
-        <Card key={result.id} className="overflow-hidden">
-          <CardHeader className="pb-2">
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <FileText className="h-5 w-5 text-gray-500" />
+      {results.map((result, index) => (
+        <div
+          key={result.id}
+          className="animate-fade-in-up"
+          style={{ animationDelay: `${index * 100}ms` }}
+        >
+          <Card className="transform hover:scale-[1.01] transition-all duration-200">
+            <CardHeader className="pb-2">
+              <div className="flex justify-between">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
                   {result.title}
                 </CardTitle>
-                {result.author && (
-                  <div className="text-sm text-gray-500 mt-1">
-                    by {result.author}
+                <div className="text-2xl font-bold text-blue-600">
+                  {(result.scores.final_score * 100).toFixed(0)}%
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-gray-600 line-clamp-2">{result.content}</p>
+
+                {result.metadata.tags?.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {result.metadata.tags.map((tag, index) => (
+                      <span key={index} className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 text-xs">
+                        <Tag className="h-3 w-3" />
+                        {tag}
+                      </span>
+                    ))}
                   </div>
                 )}
-              </div>
-              <div className="flex flex-col items-end">
-                <div className="text-3xl font-bold text-blue-600">
-                  {(result.scores.final_score * 100).toFixed(0)}
-                </div>
-                <div className="text-xs text-gray-500">
-                  relevance score
-                </div>
-              </div>
-            </div>
-          </CardHeader>
 
-          <CardContent>
-            <div className="space-y-4">
-              <div className="text-sm text-gray-600">
-                {result.highlights.map((highlight, index) => (
-                  <p
-                    key={index}
-                    className="mb-1"
-                    dangerouslySetInnerHTML={{ __html: highlight }}
-                  />
-                ))}
-              </div>
+                <button
+                  onClick={() => toggleExpand(result.id)}
+                  className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                >
+                  {expandedResults.has(result.id) ? (
+                    <>
+                      <ChevronUp className="h-4 w-4" />
+                      Hide Details
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-4 w-4" />
+                      Show Details
+                    </>
+                  )}
+                </button>
 
-              {result.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {result.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100"
-                    >
-                      <Tag className="h-3 w-3 mr-1" />
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              <button
-                onClick={() => toggleExpand(result.id)}
-                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
-              >
-                {expandedResults.has(result.id) ? (
-                  <>
-                    <ChevronUp className="h-4 w-4" />
-                    Hide Details
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="h-4 w-4" />
-                    Show Scoring Details
-                  </>
-                )}
-              </button>
-
-              {expandedResults.has(result.id) && (
-                <div className="mt-4 space-y-6 pt-4 border-t">
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-medium flex items-center gap-2">
-                      <BarChart2 className="h-4 w-4" />
-                      Score Breakdown
-                    </h4>
-                    <ScoreBar 
-                      score={result.scores.vector_score} 
-                      label="Vector Score" 
-                      color="bg-purple-600"
-                    />
-                    <ScoreBar 
-                      score={result.scores.text_score} 
-                      label="Text Score"
-                      color="bg-green-600" 
-                    />
-                    <ScoreBar 
-                      score={result.scores.final_score} 
-                      label="Final Score"
-                      color="bg-blue-600"
-                    />
-                  </div>
-
-                  {result.scores.field_scores.length > 0 && (
+                {expandedResults.has(result.id) && (
+                  <div className="mt-4 pt-4 border-t space-y-6 animate-fade-in">
                     <div className="space-y-3">
                       <h4 className="text-sm font-medium flex items-center gap-2">
-                        <Hash className="h-4 w-4" />
-                        Field Scores
+                        <BarChart2 className="h-4 w-4" />
+                        Score Breakdown
                       </h4>
-                      {result.scores.field_scores.map((fieldScore, index) => (
-                        <ScoreBar
-                          key={index}
-                          score={fieldScore.score}
-                          label={fieldScore.field}
-                          color="bg-indigo-600"
-                        />
-                      ))}
+                      <ScoreBar score={result.scores.text_score} label="Text Match" color="bg-green-500" delay={100} />
+                      <ScoreBar score={result.scores.vector_score} label="Semantic" color="bg-purple-500" delay={200} />
+                      <ScoreBar score={result.scores.final_score} label="Final Score" color="bg-blue-600" delay={300} />
                     </div>
-                  )}
 
-                  {result.matches.length > 0 && (
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-medium flex items-center gap-2">
-                        <Book className="h-4 w-4" />
-                        Term Matches
-                      </h4>
-                      <div className="grid grid-cols-2 gap-2">
-                        {result.matches.map((match, index) => (
-                          <div 
-                            key={index}
-                            className="flex justify-between items-center p-2 bg-gray-50 rounded text-sm"
-                          >
-                            <span className="text-gray-600">{match.term}</span>
-                            <span className="font-medium">
-                              {match.count}x in {match.field}
-                            </span>
-                          </div>
-                        ))}
+                    <div className="grid grid-cols-2 gap-4 text-sm animate-fade-in" style={{ animationDelay: '400ms' }}>
+                      <div>
+                        <span className="text-gray-600">Source:</span>
+                        <span className="ml-2">{result.metadata.source_type}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Words:</span>
+                        <span className="ml-2">{result.metadata.word_count.toLocaleString()}</span>
+                      </div>
+                      {result.metadata.author && (
+                        <div>
+                          <span className="text-gray-600">Author:</span>
+                          <span className="ml-2">{result.metadata.author}</span>
+                        </div>
+                      )}
+                      <div>
+                        <span className="text-gray-600">Created:</span>
+                        <span className="ml-2">
+                          {new Date(result.metadata.created_at).toLocaleDateString()}
+                        </span>
                       </div>
                     </div>
-                  )}
 
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                    <div className="text-gray-600">Source Type:</div>
-                    <div>{result.metadata.source_type}</div>
-                    
-                    <div className="text-gray-600">Word Count:</div>
-                    <div>{result.metadata.word_count.toLocaleString()}</div>
-                    
-                    <div className="text-gray-600">Created:</div>
-                    <div>{new Date(result.metadata.created_at).toLocaleString()}</div>
-                    
-                    <div className="text-gray-600">Modified:</div>
-                    <div>
-                      {new Date(result.metadata.last_modified).toLocaleString()}
-                    </div>
+                    {result.highlights?.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium">Matching Excerpts</h4>
+                        {result.highlights.map((highlight, hIndex) => (
+                          <p
+                            key={hIndex}
+                            className="text-sm text-gray-600 p-2 bg-yellow-50 rounded animate-fade-in-up"
+                            style={{ animationDelay: `${500 + hIndex * 100}ms` }}
+                            dangerouslySetInnerHTML={{ __html: highlight }}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       ))}
     </div>
   );
-};
+}
 
-export default SearchResults;
+
+

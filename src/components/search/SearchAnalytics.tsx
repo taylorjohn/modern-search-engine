@@ -1,215 +1,142 @@
-// src/components/search/SearchAnalytics.tsx
 import React from 'react';
-import { BarChart2, Clock, Hash, Zap, Scale, Filter, Sparkles } from 'lucide-react';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "@/components/ui/card";
-import { SearchAnalytics as SearchAnalyticsType } from '../../types';
+import { BarChart2, Clock, Hash, Zap, PieChart } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Pie, Cell } from 'recharts';
 
-interface Props {
-  analytics: SearchAnalyticsType;
+interface SearchAnalytics {
+  execution_time_ms: number;
+  total_results: number;
+  max_score: number;
+  vector_query: boolean;
+  result_distribution?: {
+    content_type: string;
+    count: number;
+  }[];
+  score_ranges?: {
+    range: string;
+    count: number;
+  }[];
+  timing_breakdown?: {
+    phase: string;
+    time_ms: number;
+  }[];
 }
 
-const SearchAnalytics: React.FC<Props> = ({ analytics }) => {
+interface Props {
+  analytics: SearchAnalytics;
+  className?: string;
+}
+
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
+
+export default function SearchAnalytics({ analytics, className }: Props) {
+  const scoreRanges = analytics.score_ranges || [
+    { range: '90-100%', count: 2 },
+    { range: '80-90%', count: 5 },
+    { range: '70-80%', count: 8 },
+    { range: '<70%', count: 3 }
+  ];
+
+  const timingData = analytics.timing_breakdown || [
+    { phase: 'Query Parse', time_ms: 5 },
+    { phase: 'Vector Search', time_ms: 15 },
+    { phase: 'Text Search', time_ms: 12 },
+    { phase: 'Ranking', time_ms: 8 }
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Execution Time
-            </CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics.execution_time_ms}ms</div>
-            <p className="text-xs text-muted-foreground">
-              Total processing time
-            </p>
-          </CardContent>
-        </Card>
+    <div className={className}>
+      <div className="grid grid-cols-4 gap-4 mb-4">
+        <StatCard
+          title="Time"
+          value={`${analytics.execution_time_ms}ms`}
+          description="Query execution time"
+          icon={Clock}
+        />
+        <StatCard
+          title="Results"
+          value={analytics.total_results}
+          description="Total matches found"
+          icon={Hash}
+        />
+        <StatCard
+          title="Top Score"
+          value={`${(analytics.max_score * 100).toFixed(1)}%`}
+          description="Highest match score"
+          icon={BarChart2}
+        />
+        <StatCard
+          title="Mode"
+          value={analytics.vector_query ? 'Hybrid' : 'Text'}
+          description={analytics.vector_query ? 'Vector + Text' : 'Text-only search'}
+          icon={Zap}
+        />
+      </div>
 
+      <div className="grid grid-cols-2 gap-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Results Found
-            </CardTitle>
-            <Hash className="h-4 w-4 text-muted-foreground" />
+          <CardHeader>
+            <CardTitle>Score Distribution</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analytics.total_results}</div>
-            <p className="text-xs text-muted-foreground">
-              Matching documents
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Best Score
-            </CardTitle>
-            <Scale className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {(analytics.max_score * 100).toFixed(1)}%
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={scoreRanges}>
+                  <XAxis dataKey="range" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#3b82f6" />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Highest match relevance
-            </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Search Type
-            </CardTitle>
-            <Zap className="h-4 w-4 text-muted-foreground" />
+          <CardHeader>
+            <CardTitle>Processing Time Breakdown</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold capitalize">
-              {analytics.vector_query ? 'Hybrid' : 'Text'}
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={timingData}
+                    dataKey="time_ms"
+                    nameKey="phase"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    label
+                  >
+                    {timingData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {analytics.vector_query 
-                ? 'Vector + Text Search' 
-                : 'Text-only Search'}
-            </p>
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-medium flex items-center gap-2">
-            <BarChart2 className="h-4 w-4" />
-            Performance Breakdown
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
-              <div className="text-sm text-gray-500">Vector Search</div>
-              <div className="text-lg font-semibold">
-                {analytics.performance.vector_time_ms}ms
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Text Search</div>
-              <div className="text-lg font-semibold">
-                {analytics.performance.text_time_ms}ms
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Total Time</div>
-              <div className="text-lg font-semibold">
-                {analytics.performance.total_time_ms}ms
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Results</div>
-              <div className="text-lg font-semibold">
-                {analytics.performance.result_count}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-medium flex items-center gap-2">
-            <Sparkles className="h-4 w-4" />
-            Query Analysis
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <div className="text-sm text-gray-500 mb-1">Original Query</div>
-                <div className="text-sm bg-gray-50 p-2 rounded">
-                  {analytics.query_analysis.original}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-gray-500 mb-1">Expanded Query</div>
-                <div className="text-sm bg-gray-50 p-2 rounded">
-                  {analytics.query_analysis.expanded}
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <div className="text-sm text-gray-500 mb-2">Query Tokens</div>
-              <div className="flex flex-wrap gap-2">
-                {analytics.query_analysis.tokens.map((token, index) => (
-                  <span
-                    key={index}
-                    className="px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded"
-                  >
-                    {token}
-                  </span>
-                ))}
-              </div>
-            </div>
-            
-            {analytics.query_analysis.stopwords_removed.length > 0 && (
-              <div>
-                <div className="text-sm text-gray-500 mb-2">Removed Stopwords</div>
-                <div className="flex flex-wrap gap-2">
-                  {analytics.query_analysis.stopwords_removed.map((word, index) => (
-                    <span
-                      key={index}
-                      className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded"
-                    >
-                      {word}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-medium flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            Field Weights
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {Object.entries(analytics.field_weights).map(([field, weight]) => (
-              <div key={field}>
-                <div className="text-sm font-medium mb-1 capitalize">
-                  {field.replace('_', ' ')}
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-2 bg-gray-200 rounded-full">
-                    <div
-                      className="h-2 bg-blue-600 rounded-full transition-all duration-300"
-                      style={{ width: `${weight * 100}%` }}
-                    />
-                  </div>
-                  <span className="text-sm text-gray-600 w-12 text-right">
-                    {(weight * 100).toFixed(0)}%
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
-};
+}
 
-export default SearchAnalytics;
+function StatCard({ title, value, description, icon: Icon }) {
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </CardContent>
+    </Card>
+  );
+}
