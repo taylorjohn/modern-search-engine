@@ -1,43 +1,29 @@
-// src/components/search/SearchInput.tsx
 import React from 'react';
 import { Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 
 interface SearchInputProps {
-  value: string;
+  query: string;
   onChange: (value: string) => void;
-  onSearch: () => void;
-  isLoading?: boolean;
+  isLoading: boolean;
 }
 
-export const SearchInput: React.FC<SearchInputProps> = ({
-  value,
-  onChange,
-  onSearch,
-  isLoading = false,
-}) => {
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSearch();
-  };
-
+export default function SearchInput({ query, onChange, isLoading }: SearchInputProps) {
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2">
+    <div className="flex gap-4 mt-8">
       <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-        <Input
+        <input
           type="text"
-          value={value}
+          value={query}
           onChange={(e) => onChange(e.target.value)}
-          className="pl-10"
           placeholder="Search documents..."
-          disabled={isLoading}
+          className="w-full px-10 py-2 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
         />
+        {isLoading ? (
+          <div className="absolute right-3 top-2.5 animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full" />
+        ) : (
+          <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+        )}
       </div>
-      <Button type="submit" disabled={isLoading}>
-        Search
-      </Button>
-    </form>
+    </div>
   );
-};
+}

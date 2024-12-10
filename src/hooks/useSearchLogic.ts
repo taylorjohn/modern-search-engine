@@ -1,71 +1,92 @@
-// src/hooks/useSearchLogic.ts
-import { useCallback, useRef, useEffect } from 'react';
-import { useSearch } from '../contexts/SearchContext';
+import { useState, useCallback, useEffect } from 'react';
+import { Clock, Hash, BarChart2, Zap } from 'lucide-react';
 
-export const useSearchLogic = () => {
-  const { state, dispatch } = useSearch();
-  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+export function useSearchLogic() {
+  const [query, setQuery] = useState('');
+  const [expandedItems, setExpandedItems] = useState(new Set());
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchHistory, setSearchHistory] = useState([
+    { query: 'vector search', results: 5 },
+    { query: 'embeddings', results: 3 },
+    { query: 'semantic search', results: 7 }
+  ]);
+  const [results, setResults] = useState([
+    {
+      id: '1',
+      title: 'Introduction to Vector Search',
+      content: 'A comprehensive guide to understanding vector search and its applications in modern search engines...',
+      scores: {
+        textScore: 0.92,
+        vectorScore: 0.88,
+        finalScore: 0.95
+      },
+      metadata: {
+        author: 'John Doe',
+        created: '2024-01-15',
+        wordCount: 1250,
+        type: 'technical'
+      }
+    }
+  ]);
 
-  const executeSearch = useCallback(async () => {
-    if (!state.query.trim()) return;
+  const stats = [
+    { title: 'Time', value: '45ms', icon: Clock },
+    { title: 'Results', value: results.length, icon: Hash },
+    { title: 'Score', value: '92%', icon: BarChart2 },
+    { title: 'Mode', value: 'Hybrid', icon: Zap }
+  ];
 
+  const debouncedSearch = useCallback(async (searchQuery: string) => {
+    setIsLoading(true);
     try {
-      dispatch({ type: 'SET_LOADING', payload: true });
-      dispatch({ type: 'SET_ERROR', payload: null });
-
-      const response = await fetch('/api/search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query: state.query,
-          filters: state.filters,
-          options: state.options,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Search failed');
-      }
-
+      const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
       const data = await response.json();
-      dispatch({ type: 'SET_RESULTS', payload: data.results });
-      dispatch({ type: 'SET_ANALYTICS', payload: data.analytics });
+      setResults(data.results);
       
-      if (state.query.trim()) {
-        dispatch({ type: 'ADD_TO_HISTORY', payload: state.query });
-      }
+      setSearchHistory(prev => [
+        { query: searchQuery, results: data.results.length },
+        ...prev.filter(item => item.query !== searchQuery).slice(0, 4)
+      ]);
     } catch (error) {
-      dispatch({ 
-        type: 'SET_ERROR', 
-        payload: error instanceof Error ? error.message : 'Search failed'
-      });
+      console.error('Search failed:', error);
     } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
+      setIsLoading(false);
     }
-  }, [state.query, state.filters, state.options, dispatch]);
+  }, []);
 
-  const debouncedSearch = useCallback(() => {
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
+  const handleSearchChange = useCallback((value: string) => {
+    setQuery(value);
+    if (value.trim()) {
+      debouncedSearch(value);
     }
+  }, [debouncedSearch]);
 
-    searchTimeoutRef.current = setTimeout(() => {
-      executeSearch();
-    }, 300);
-  }, [executeSearch]);
+  const handleHistorySelect = useCallback((selectedQuery: string) => {
+    setQuery(selectedQuery);
+    debouncedSearch(selectedQuery);
+  }, [debouncedSearch]);
 
-  useEffect(() => {
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
+  const toggleExpand = useCallback((id: string) => {
+    setExpandedItems(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
       }
-    };
+      return next;
+    });
   }, []);
 
   return {
-    executeSearch,
-    debouncedSearch,
+    query,
+    results,
+    isLoading,
+    searchHistory,
+    stats,
+    handleSearchChange,
+    handleHistorySelect,
+    expandedItems,
+    toggleExpand,
   };
-};
+}
