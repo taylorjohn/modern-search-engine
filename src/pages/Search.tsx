@@ -1,58 +1,15 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Search as SearchIcon, RefreshCcw } from 'lucide-react';
 import SearchResults from '../components/search/SearchResults';
 import SearchBar from '../components/search/SearchBar';
 import SearchAnalytics from '../components/search/SearchAnalytics';
 import SearchFilters from '../components/search/SearchFilters';
+import SearchHistory from '../components/search/SearchHistory';
+import SearchHistoryManager from '../components/search/SearchHistoryManager';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-
-interface SearchResult {
-  id: string;
-  title: string;
-  content: string;
-  scores: {
-    text_score: number;
-    vector_score: number;
-    final_score: number;
-  };
-  metadata: {
-    source_type: string;
-    author?: string;
-    created_at: string;
-    word_count: number;
-    tags?: string[];
-  };
-  highlights?: string[];
-}
-
-interface SearchFilters {
-  contentTypes: string[];
-  dateRange: {
-    from: Date | null;
-    to: Date | null;
-  };
-  authors: string[];
-}
-
-interface SearchAnalytics {
-  execution_time_ms: number;
-  total_results: number;
-  max_score: number;
-  vector_query: boolean;
-  result_distribution: {
-    content_type: string;
-    count: number;
-  }[];
-  score_ranges: {
-    range: string;
-    count: number;
-  }[];
-  timing_breakdown: {
-    phase: string;
-    time_ms: number;
-  }[];
-}
+import { searchHistoryService } from '../services/searchHistory';
+import type { SearchHistoryItem, SearchFilters, SearchAnalytics, SearchResult } from '../types/search';
 
 interface SearchResponse {
   results: SearchResult[];
@@ -65,11 +22,16 @@ export default function Search() {
   const [isLoading, setIsLoading] = useState(false);
   const [analytics, setAnalytics] = useState<SearchAnalytics | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
   const [filters, setFilters] = useState<SearchFilters>({
     contentTypes: ['pdf', 'html', 'text'],
     dateRange: { from: null, to: null },
     authors: []
   });
+
+  useEffect(() => {
+    setSearchHistory(searchHistoryService.get());
+  }, []);
 
   const handleSearch = useCallback(async () => {
     if (!query.trim()) return;
@@ -103,6 +65,21 @@ export default function Search() {
       const data: SearchResponse = await response.json();
       setResults(data.results);
       setAnalytics(data.analytics);
+
+      const historyItem: SearchHistoryItem = {
+        query,
+        timestamp: new Date().toISOString(),
+        results: data.results.length,
+        executionTime: data.analytics.execution_time_ms,
+        filters: {
+          contentTypes: filters.contentTypes,
+          authors: filters.authors
+        }
+      };
+
+      const updatedHistory = searchHistoryService.add(historyItem);
+      setSearchHistory(updatedHistory);
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Search failed');
     } finally {
@@ -121,6 +98,13 @@ export default function Search() {
     });
   };
 
+  const handleQuerySelect = (selectedQuery: string) => {
+    setQuery(selectedQuery);
+    handleSearch();
+  };
+
+  const frequentQueries = searchHistoryService.getFrequentQueries();
+
   return (
     <div className="container mx-auto px-4 py-8">
       <header className="mb-8">
@@ -138,6 +122,10 @@ export default function Search() {
           />
         </div>
         <SearchFilters filters={filters} onChange={setFilters} />
+        <SearchHistoryManager 
+          history={searchHistory}
+          onHistoryChange={setSearchHistory}
+        />
         <Button
           variant="outline"
           size="icon"
@@ -148,6 +136,31 @@ export default function Search() {
         </Button>
       </div>
 
+      {frequentQueries.length > 0 && (
+        <div className="mb-4">
+          <div className="text-sm font-medium mb-2">Popular Searches:</div>
+          <div className="flex flex-wrap gap-2">
+            {frequentQueries.map(({ query, count }) => (
+              <button
+                key={query}
+                onClick={() => handleQuerySelect(query)}
+                className="px-3 py-1 text-sm bg-gray-100 rounded-full hover:bg-gray-200 transition-colors flex items-center gap-2"
+              >
+                <span>{query}</span>
+                <span className="text-xs text-gray-500">({count})</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {searchHistory.length > 0 && (
+        <SearchHistory
+          history={searchHistory}
+          onQuerySelect={handleQuerySelect}
+        />
+      )}
+
       {error && (
         <Card className="mb-6 border-red-200 bg-red-50">
           <CardContent className="p-4 text-red-600">
@@ -157,13 +170,15 @@ export default function Search() {
       )}
 
       {analytics && (
-        <div className="space-y-6 mb-6">
+        <div className="space-y-6 mb-6 animate-fade-in">
           <SearchAnalytics analytics={analytics} />
         </div>
       )}
 
       {results.length > 0 ? (
-        <SearchResults results={results} />
+        <div className="animate-fade-in">
+          <SearchResults results={results} />
+        </div>
       ) : (
         query && !isLoading && (
           <Card>
