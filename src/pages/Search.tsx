@@ -3,6 +3,7 @@ import { Search as SearchIcon, ChevronDown, ChevronUp, BarChart2, Clock, Hash, Z
 import { Card, CardContent } from '../components/ui/card';
 import { mockSearch, mockSearchHistory, mockStats, MockDocument } from '../mockData';
 
+
 interface SearchHistoryItem {
   query: string;
   results: number;
@@ -29,7 +30,7 @@ function ScoreBar({ label, score, color = "bg-blue-600" }) {
   );
 }
 
-export function Search() {
+function Search() {
   const [query, setQuery] = useState('');
   const [expandedItems, setExpandedItems] = useState(new Set<string>());
   const [isLoading, setIsLoading] = useState(false);

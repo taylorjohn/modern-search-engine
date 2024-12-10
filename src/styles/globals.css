@@ -1,74 +1,97 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
+
+/* Animation classes */
+.animate-score-bar {
+  animation: slideRight 1s forwards;
+}
+
+@keyframes slideRight {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(0);
   }
 }
 
-@layer base {
-  * {
-    @apply border-input;
-  }
-  body {
-    @apply bg-background text-foreground antialiased;
+/* Component transitions */
+.search-result {
+  transition: all 0.2s ease-out;
+}
+
+.search-result:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.score-bar-progress {
+  transition: width 1s ease-out;
+}
+
+/* Search bar focus styles */
+.search-input:focus {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+/* Card hover effects */
+.hover-card {
+  transition: all 0.2s ease-out;
+}
+
+.hover-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+/* Tag hover effects */
+.tag {
+  transition: all 0.2s ease-out;
+}
+
+.tag:hover {
+  background-color: rgb(243 244 246);
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
-@layer components {
-  .card-hover {
-    @apply transition-all duration-200 hover:shadow-lg hover:scale-[1.02];
-  }
-
-  .score-bar {
-    @apply relative overflow-hidden;
-  }
-
-  .score-bar::after {
-    content: '';
-    @apply animate-shimmer absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent;
-  }
-
-  .loading-spinner {
-    @apply animate-spin;
-  }
-
-  .highlight {
-    @apply bg-yellow-100 px-1 rounded transition-colors duration-200 hover:bg-yellow-200;
-  }
-
-  .expandable-content {
-    @apply transition-all duration-300 ease-in-out overflow-hidden;
-  }
+.animate-spin {
+  animation: spin 1s linear infinite;
 }
 
-@layer utilities {
-  .prose {
-    @apply max-w-none;
-  }
+/* Score bar animations */
+.score-bar {
+  position: relative;
+  overflow: hidden;
+}
 
-  .prose a {
-    @apply text-primary hover:text-primary/80 transition-colors;
+.score-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0.2) 50%,
+    rgba(255,255,255,0) 100%
+  );
+  animation: shine 1.5s infinite;
+}
+
+@keyframes shine {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
   }
 }

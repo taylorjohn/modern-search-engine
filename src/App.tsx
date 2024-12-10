@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search } from './pages/Search';
+import Search from './pages/Search';  // Import the default export
 
 function App() {
   return (
