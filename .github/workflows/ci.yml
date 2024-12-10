@@ -1,0 +1,54 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ "main", "v2-development" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Lint
+      run: npm run lint --if-present
+      
+    - name: Type check
+      run: npm run type-check --if-present
+    
+    - name: Build
+      run: npm run build
+    
+    - name: Test
+      run: npm run test --if-present
+<<<<<<< HEAD:.github:workflows:ci.yml
+
+    - name: Cache build artifacts
+      uses: actions/cache@v3
+      with:
+        path: |
+          dist
+          .next
+        key: ${{ runner.os }}-build-${{ github.sha }}
+
+    # Optional: Add deployment step here if needed
+    # - name: Deploy
+    #   if: github.ref == 'refs/heads/main'
+    #   run: echo "Add deployment steps here"
+=======
+>>>>>>> 6a3a6384d2518765719335a936c5bb10ce9cdcb1:.github/workflows:ci.yml
