@@ -4,45 +4,33 @@ version = "2.0.0"
 edition = "2021"
 
 [dependencies]
-# Server and async
+uuid = { version = "1.0", features = ["v4"] }
+whatlang = "0.16"
+scraper = "0.17"
+lopdf = "0.31"
+html2text = "0.6"
 tokio = { version = "1.0", features = ["full"] }
 warp = "0.3"
-futures = "0.3"
-
-# Search and indexing
-tantivy = "0.19"
-rust-bert = "0.20"
-
-# Document processing
-lopdf = "0.31"
-scraper = "0.17"
-base64 = "0.21"
-
-# Database
-sqlx = { version = "0.7", features = ["runtime-tokio-native-tls", "postgres", "chrono", "uuid"] }
-postgres = "0.19"
-
-# Utils
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "uuid", "json", "chrono"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
 anyhow = "1.0"
 thiserror = "1.0"
-uuid = { version = "1.4", features = ["v4", "serde"] }
-chrono = { version = "0.4", features = ["serde"] }
-config = "0.13"
-
-# Logging and metrics
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-metrics = "0.20"
-metrics-exporter-prometheus = "0.11"
-
-# HTML processing
-html2text = "0.4"
+metrics = "0.21"
+metrics-exporter-prometheus = "0.12"
+lazy_static = "1.4"
+rayon = "1.8"
+ndarray = "0.15"
+base64 = "0.21"
+sha2 = "0.10"
+regex = "1.10"
+config = "0.13"
+url = "2.4"
+num_cpus = "1.16"
 ammonia = "3.3"
-
-[dev-dependencies]
+reqwest = { version = "0.11", features = ["json"] }
 tokio-test = "0.4"
-tempfile = "3.8"
-wiremock = "0.5"
 pretty_assertions = "1.0"

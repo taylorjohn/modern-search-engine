@@ -1,15 +1,15 @@
 use modern_search_engine::{
     api::{handlers, routes},
     config::Config,
-    search::engine::SearchEngine,
     document::processor::DocumentProcessor,
+    search::engine::SearchEngine,
     vector::store::VectorStore,
 };
 
-use warp::test::request;
 use serde_json::{json, Value};
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use warp::test::request;
 
 #[tokio::test]
 async fn test_search_endpoint() {
@@ -17,18 +17,17 @@ async fn test_search_endpoint() {
     let config = Config::default();
     let vector_store = Arc::new(RwLock::new(VectorStore::new(&config).await.unwrap()));
     let search_engine = Arc::new(SearchEngine::new(vector_store.clone(), &config.search).unwrap());
-    let document_processor = Arc::new(DocumentProcessor::new(
-        vector_store.clone(),
-        search_engine.clone(),
-        &config.processor,
-    ).unwrap());
+    let document_processor = Arc::new(
+        DocumentProcessor::new(
+            vector_store.clone(),
+            search_engine.clone(),
+            &config.processor,
+        )
+        .unwrap(),
+    );
 
     // Create test routes
-    let routes = routes::create_routes(
-        search_engine,
-        document_processor,
-        Arc::new(config),
-    );
+    let routes = routes::create_routes(search_engine, document_processor, Arc::new(config));
 
     // Test search request
     let response = request()
@@ -72,7 +71,7 @@ async fn test_error_handling() {
     // Test invalid request
     let response = request()
         .method("GET")
-        .path("/search")  // Missing required query parameter
+        .path("/search") // Missing required query parameter
         .reply(&routes)
         .await;
 

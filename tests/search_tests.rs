@@ -1,9 +1,5 @@
 use modern_search_engine::{
-    search::{
-        engine::SearchEngine,
-        query_parser::QueryParser,
-        executor::SearchExecutor,
-    },
+    search::{engine::SearchEngine, executor::SearchExecutor, query_parser::QueryParser},
     vector::store::VectorStore,
 };
 
@@ -35,7 +31,7 @@ async fn test_query_parsing() {
 #[tokio::test]
 async fn test_vector_search() {
     let engine = setup_test_engine().await;
-    
+
     // Add test document
     let test_doc = Document {
         content: "Test vector search functionality",
@@ -51,11 +47,17 @@ async fn test_vector_search() {
 #[tokio::test]
 async fn test_hybrid_search() {
     let engine = setup_test_engine().await;
-    
+
     // Test hybrid search with different weights
     let configs = vec![
-        SearchConfig { vector_weight: 0.7, text_weight: 0.3 },
-        SearchConfig { vector_weight: 0.3, text_weight: 0.7 },
+        SearchConfig {
+            vector_weight: 0.7,
+            text_weight: 0.3,
+        },
+        SearchConfig {
+            vector_weight: 0.3,
+            text_weight: 0.7,
+        },
     ];
 
     for config in configs {
@@ -63,7 +65,7 @@ async fn test_hybrid_search() {
             .search_with_config("test query", 10, None, config)
             .await
             .unwrap();
-        
+
         assert!(!results.is_empty());
     }
 }
