@@ -2,24 +2,31 @@
   "name": "modern-search-engine",
   "version": "2.0.0",
   "private": true,
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "mcp": "ts-node --project server/tsconfig.json server/mcp-server.ts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.0.4",
+    "@types/express": "^5.0.0",
+    "@types/socket.io": "^3.0.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
+    "express": "^4.21.2",
     "lucide-react": "^0.263.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-dropzone": "^14.2.3",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
     "tailwind-merge": "^1.14.0",
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@types/node": "^22.10.2",
     "@types/react": "^18.2.20",
     "@types/react-dom": "^18.2.7",
     "@typescript-eslint/eslint-plugin": "^6.4.0",
