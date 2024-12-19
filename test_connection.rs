@@ -1,6 +1,7 @@
 use sqlx::postgres::PgPoolOptions;
 use tokio;
 
+
 #[tokio::main]
 async fn main() -> Result<(), sqlx::Error> {
     // Connection string - this is what your app will use
