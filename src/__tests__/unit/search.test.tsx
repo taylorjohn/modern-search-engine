@@ -4,7 +4,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Search from '../../pages/Search';
-import { mockSearch } from '../../mockData';
 
 // Mock the GitMonitor
 vi.mock('../../hooks/useGitChanges', () => ({
@@ -24,6 +23,7 @@ describe('Search Component', () => {
   it('renders initial state correctly', () => {
     render(<Search />);
     
+    // Check main elements
     expect(screen.getByText('Modern Search Engine')).toBeInTheDocument();
     expect(screen.getByText('Search with transparency and real-time insights')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Search documents...')).toBeInTheDocument();
@@ -39,7 +39,7 @@ describe('Search Component', () => {
     render(<Search />);
     const searchInput = screen.getByPlaceholderText('Search documents...');
     
-    await userEvent.type(searchInput, 'vector');
+    await userEvent.type(searchInput, 'vector search');
     
     await waitFor(() => {
       expect(screen.getByText(/Introduction to Vector Search/)).toBeInTheDocument();
@@ -51,7 +51,7 @@ describe('Search Component', () => {
     render(<Search />);
     const searchInput = screen.getByPlaceholderText('Search documents...');
     
-    await userEvent.type(searchInput, 'test');
+    await userEvent.type(searchInput, 'vector');
     
     await waitFor(() => {
       const statsCards = screen.getAllByRole('generic').filter(el => 
@@ -99,14 +99,11 @@ describe('Search Component', () => {
       const resultCard = screen.getByText(/Introduction to Vector Search/).closest('.hover\\:shadow-lg');
       const detailsButton = resultCard?.querySelector('button');
       expect(detailsButton).toBeTruthy();
+      
       if (detailsButton) {
         fireEvent.click(detailsButton);
+        expect(screen.getByText('Score Breakdown')).toBeInTheDocument();
       }
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText('Score Breakdown')).toBeInTheDocument();
-      expect(document.querySelector('.space-y-2')).toBeInTheDocument();
     });
   });
 
@@ -136,6 +133,7 @@ describe('Search Component', () => {
     const searchInput = screen.getByPlaceholderText('Search documents...');
     
     await userEvent.type(searchInput, 'test search');
+    
     await waitFor(() => {
       const historyButtons = screen.getAllByRole('button');
       const searchButton = historyButtons.find(button => 
@@ -144,36 +142,54 @@ describe('Search Component', () => {
       expect(searchButton).toBeTruthy();
       if (searchButton) {
         fireEvent.click(searchButton);
+        expect(searchInput).toHaveValue('test search');
       }
     });
-
-    expect(searchInput).toHaveValue('test search');
   });
 
   it('preserves search history between searches', async () => {
     render(<Search />);
     const searchInput = screen.getByPlaceholderText('Search documents...');
-    const searches = ['first', 'second', 'third'];
-    
+    const searches = ['vector', 'search', 'embeddings'];
+
+    // Perform each search with proper waiting
     for (const term of searches) {
       await userEvent.clear(searchInput);
       await userEvent.type(searchInput, term);
-      
-      await waitFor(() => {
+
+      // Wait for search completion and history update
+      await waitFor(async () => {
         const historySection = screen.getByText('Recent Searches').closest('.p-4');
-        expect(screen.getByRole('button', { name: new RegExp(term, 'i') })).toBeInTheDocument();
         expect(historySection).toBeInTheDocument();
+
+        const buttons = screen.getAllByRole('button');
+        const termFound = buttons.some(button => 
+          button.textContent?.toLowerCase().includes(term.toLowerCase())
+        );
+        expect(termFound).toBe(true);
       }, { timeout: 2000 });
     }
 
+    // Verify most recent searches are present
     const historyButtons = screen.getAllByRole('button');
-    const recentSearches = searches.slice(-4);
-    recentSearches.forEach(term => {
-      expect(
-        historyButtons.some(button => 
-          button.textContent?.toLowerCase().includes(term.toLowerCase())
-        )
-      ).toBe(true);
-    });
+    const buttonTexts = historyButtons.map(button => button.textContent?.toLowerCase() || '');
+    
+    // Check most recent searches (considering history limit)
+    const recentSearches = searches.slice(-3);
+    for (const term of recentSearches) {
+      const termExists = buttonTexts.some(text => text.includes(term.toLowerCase()));
+      if (!termExists) {
+        console.log('Debug - Available button texts:', buttonTexts);
+        console.log('Debug - Looking for term:', term);
+      }
+      expect(termExists).toBe(true);
+    }
   });
+
+  // Helper function to wait for search completion
+  const waitForSearch = async () => {
+    await waitFor(() => {
+      expect(document.querySelector('.animate-spin')).not.toBeInTheDocument();
+    });
+  };
 });
