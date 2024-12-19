@@ -256,8 +256,78 @@ cargo test
 cargo test test_name
 ```
 
-### 4.3 Start Development Servers
+Markdown
+## Testing
+
+### Running Tests
+To ensure the application works as expected, a comprehensive suite of tests is included. The tests are categorized into different types:
+
+#### Unit Tests
+Unit tests cover individual functions and modules to ensure they work correctly in isolation. These tests are located in the `src/tests.rs` file.
+
+To run unit tests:
 ```bash
+cargo test --lib -- --nocapture
+Integration Tests
+
+Integration tests validate the entire workflow of the application, ensuring that different components work together as expected. These tests are found in the tests/integration_tests.rs file.
+
+To run integration tests:
+
+cargo test --test '*'
+API Tests
+
+API tests ensure that the API endpoints function correctly. These tests are located in the tests/api_tests.rs file.
+
+To run API tests:
+
+```
+cargo test --test api_tests -- --nocapture
+```
+
+Document Tests
+
+Document tests focus on processing, storing, and retrieving documents. These tests are located in the tests/document_tests.rs file.
+
+To run document tests:
+
+```
+cargo test --test document_tests -- --nocapture
+```
+
+Search Tests
+
+Search tests validate the search functionalities, including query parsing, vector search, and hybrid search. These tests are located in the tests/search_tests.rs file.
+
+To run search tests:
+
+```
+cargo test --test search_tests -- --nocapture
+```
+
+Performance Tests
+
+Performance tests measure the efficiency of indexing and search operations. These tests are included in the scripts/test.sh script.
+
+To run performance tests:
+
+```
+./scripts/test.sh
+```
+
+Generating Coverage Report
+
+To generate a test coverage report:
+
+```
+cargo tarpaulin --out Html
+```
+For more details, refer to the individual test files and scripts in the repository.
+
+### 4.3 Start Development Servers
+
+```
+bash
 # Terminal 1: Run backend server
 cargo run
 
