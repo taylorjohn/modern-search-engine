@@ -1,3 +1,4 @@
+// src/components/DocumentUpload.tsx
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, X, AlertCircle, RefreshCw } from 'lucide-react';

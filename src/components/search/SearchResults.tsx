@@ -1,108 +1,163 @@
-import React from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useCallback, useState } from 'react';
+import { useDropzone } from 'react-dropzone';
+import { Upload, X, AlertCircle, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-interface SearchResult {
-  id: string;
-  title: string;
-  content: string;
-  scores: {
-    textScore: number;
-    vectorScore: number;
-    finalScore: number;
-  };
-  metadata: {
-    author: string;
-    created: string;
-    wordCount: number;
-    type: string;
-  };
+interface Props {
+  onFilesSelected: (files: File[]) => void;
+  onUploadError?: (error: Error, fileName: string) => void;
+  disabled?: boolean;
+  accept?: string;
+  maxSize?: number;
+  multiple?: boolean;
 }
 
-interface SearchResultsProps {
-  results: SearchResult[];
-  expandedItems: Set<string>;
-  onToggleExpand: (id: string) => void;
+interface UploadStatus {
+  fileName: string;
+  progress: number;
+  error?: string;
 }
 
-function ScoreBar({ label, score, color = "bg-blue-600" }) {
+const DocumentUpload: React.FC<Props> = ({
+  onFilesSelected,
+  onUploadError,
+  disabled = false,
+  accept = 'application/pdf,text/html,text/plain',
+  maxSize = 10485760, // 10MB
+  multiple = true,
+}) => {
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleUpload = async (files: File[]) => {
+    if (files.length === 0) return;
+    
+    const file = files[0];
+    setIsUploading(true);
+    setUploadStatus({ fileName: file.name, progress: 0 });
+
+    try {
+      // Simulate upload progress
+      for (let progress = 0; progress <= 100; progress += 10) {
+        setUploadStatus(prev => ({ ...prev!, progress }));
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      onFilesSelected(files);
+    } catch (error) {
+      const uploadError = error instanceof Error ? error : new Error('Upload failed');
+      setUploadStatus(prev => ({ ...prev!, error: uploadError.message }));
+      onUploadError?.(uploadError, file.name);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const cancelUpload = () => {
+    setIsUploading(false);
+    setUploadStatus(null);
+  };
+
+  const retryUpload = useCallback(() => {
+    if (!uploadStatus) return;
+    handleUpload([new File([], uploadStatus.fileName)]);
+  }, [uploadStatus]);
+
+  const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
+    onDrop: handleUpload,
+    accept: {
+      'application/pdf': ['.pdf'],
+      'text/html': ['.html', '.htm'],
+      'text/plain': ['.txt'],
+    },
+    maxSize,
+    multiple,
+    disabled: disabled || isUploading,
+  });
+
   return (
-    <div className="flex items-center gap-2">
-      <span className="w-24 text-sm text-gray-600">{label}:</span>
-      <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
-        <div
-          className={`${color} h-full transition-all duration-1000 ease-out`}
-          style={{ 
-            width: `${score * 100}%`,
-            transform: 'translateX(-100%)',
-            animation: 'slideRight 1s forwards'
-          }}
+    <div className="space-y-4" data-testid="document-upload">
+      <div
+        {...getRootProps()}
+        className={`
+          relative border-2 border-dashed rounded-lg p-8 text-center cursor-pointer
+          transition-colors duration-200 ease-in-out
+          ${isDragActive ? 'border-blue-400 bg-blue-50' : 'border-gray-300'}
+          ${isDragReject ? 'border-red-400 bg-red-50' : ''}
+          ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
+        `}
+        data-testid="dropzone"
+      >
+        <input {...getInputProps()} />
+        <Upload
+          className={`mx-auto h-12 w-12 mb-4 ${
+            isDragActive ? 'text-blue-500' : 'text-gray-400'
+          }`}
         />
+
+        <div className="text-sm">
+          <p className="font-medium mb-1">
+            {isDragActive ? 'Drop files here...' : 'Drag and drop files here, or click to select'}
+          </p>
+          <p className="text-gray-500" data-testid="size-limit">
+            Supported formats: PDF, HTML, TXT (max {maxSize / 1024 / 1024} MB)
+          </p>
+        </div>
       </div>
-      <span className="w-16 text-sm text-gray-600 text-right">
-        {(score * 100).toFixed(1)}%
-      </span>
-    </div>
-  );
-}
 
-export default function SearchResults({ results, expandedItems, onToggleExpand }: SearchResultsProps) {
-  return (
-    <div className="mt-8 space-y-4">
-      {results.map((result) => (
-        <Card key={result.id} className="hover:shadow-lg transition-all duration-200">
-          <CardContent className="p-6">
-            <div className="flex justify-between">
-              <h2 className="text-lg font-semibold">{result.title}</h2>
-              <span className="text-2xl font-bold text-blue-600">
-                {(result.scores.finalScore * 100).toFixed(0)}%
-              </span>
-            </div>
-            <p className="mt-2 text-gray-600">{result.content}</p>
-            
-            <button
-              onClick={() => onToggleExpand(result.id)}
-              className="mt-4 text-sm text-blue-600 flex items-center gap-1 hover:text-blue-800"
-            >
-              {expandedItems.has(result.id) ? (
-                <>Hide Details <ChevronUp className="w-4 w-4" /></>
-              ) : (
-                <>Show Details <ChevronDown className="w-4 w-4" /></>
-              )}
-            </button>
-
-            {expandedItems.has(result.id) && (
-              <div className="mt-4 pt-4 border-t space-y-4 animate-fade-in">
-                <div className="space-y-2">
-                  <h3 className="text-sm font-medium">Score Breakdown</h3>
-                  <ScoreBar label="Text Match" score={result.scores.textScore} color="bg-green-500" />
-                  <ScoreBar label="Vector Score" score={result.scores.vectorScore} color="bg-purple-500" />
-                  <ScoreBar label="Final Score" score={result.scores.finalScore} color="bg-blue-600" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-500">Author:</span>
-                    <span className="ml-2">{result.metadata.author}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Created:</span>
-                    <span className="ml-2">{new Date(result.metadata.created).toLocaleDateString()}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Word Count:</span>
-                    <span className="ml-2">{result.metadata.wordCount}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Type:</span>
-                    <span className="ml-2 capitalize">{result.metadata.type}</span>
-                  </div>
-                </div>
+      {uploadStatus && (
+        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+          <div className="flex justify-between items-center mb-2">
+            <span className="font-medium">{uploadStatus.fileName}</span>
+            {uploadStatus.error ? (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={retryUpload}
+                  aria-label="retry upload"
+                >
+                  <RefreshCw className="w-4 h-4 mr-1" />
+                  Retry
+                </Button>
               </div>
+            ) : (
+              isUploading && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={cancelUpload}
+                  aria-label="cancel upload"
+                >
+                  <X className="w-4 h-4 mr-1" />
+                  Cancel
+                </Button>
+              )
             )}
-          </CardContent>
-        </Card>
-      ))}
+          </div>
+
+          {uploadStatus.error ? (
+            <div className="flex items-center gap-2 text-red-600">
+              <AlertCircle className="w-4 h-4" />
+              <span>{uploadStatus.error}</span>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Progress</span>
+                <span>{uploadStatus.progress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${uploadStatus.progress}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
-}
+};
+
+export default DocumentUpload;
