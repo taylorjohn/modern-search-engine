@@ -1,0 +1,34 @@
+DOC_ID: 001
+TITLE: The Benefits of Machine Learning
+CONTENT: Machine learning is a subfield of artificial intelligence that enables computers to learn from data. It is used in various applications, including healthcare, finance, and autonomous systems.
+
+DOC_ID: 002
+TITLE: Exploring the Universe
+CONTENT: Astronomy is the study of celestial objects, space, and the universe as a whole. Advances in technology have allowed astronomers to observe distant galaxies and uncover the secrets of the cosmos.
+
+DOC_ID: 003
+TITLE: A Guide to Healthy Eating
+CONTENT: Healthy eating involves consuming a balanced diet that includes fruits, vegetables, proteins, and whole grains. It plays a crucial role in maintaining physical and mental health.
+
+DOC_ID: 004
+TITLE: Understanding Quantum Computing
+CONTENT: Quantum computing harnesses the principles of quantum mechanics to process information in ways that classical computers cannot. It has the potential to revolutionize fields like cryptography and optimization.
+
+DOC_ID: 005
+TITLE: Climate Change and Its Impact
+CONTENT: Climate change refers to long-term alterations in temperature, precipitation, and other atmospheric conditions. It is driven by human activities, such as burning fossil fuels and deforestation.
+
+DOC_ID: 006
+TITLE: The History of the Internet
+CONTENT: The internet has evolved from a military project in the 1960s to a global network connecting billions of devices. It has transformed communication, commerce, and information sharing.
+
+DOC_ID: 007
+TITLE: Renewable Energy Sources
+CONTENT: Renewable energy sources, such as solar, wind, and hydropower, are essential for a sustainable future. These resources help reduce carbon emissions and dependence on fossil fuels.
+
+DOC_ID: 008
+TITLE: The Art of Mindfulness
+CONTENT: Mindfulness is the practice of being present in the moment, without judgment. It can reduce stress, enhance focus, and improve overall well-being.
+
+DOC_ID: 009
+TITLE: Advances
