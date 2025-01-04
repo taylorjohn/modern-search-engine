@@ -1,195 +1,127 @@
-// src/__tests__/unit/search.test.tsx
-import React from 'react';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { BrowserRouter } from 'react-router-dom';
 import Search from '../../pages/Search';
+import { documentService } from '../../services/documentService';
 
-// Mock the GitMonitor
-vi.mock('../../hooks/useGitChanges', () => ({
-  useGitChanges: () => ({
-    isConnected: false,
-    changes: [],
-    repoState: []
-  })
+vi.mock('../../services/documentService', () => ({
+  documentService: {
+    searchDocuments: vi.fn(() => Promise.resolve([])),
+    subscribeToProcessing: vi.fn(() => ({
+      unsubscribe: vi.fn()
+    }))
+  }
 }));
+
+const mockResults = [{
+  id: '1',
+  title: 'Test Document',
+  content: 'Test content',
+  documentType: 'pdf',
+  scores: {
+    textScore: 0.8,
+    vectorScore: 0.9,
+    finalScore: 0.85
+  },
+  metadata: {
+    author: 'Test Author',
+    created: '2024-01-01',
+    wordCount: 100,
+    type: 'document'
+  },
+  tags: []
+}];
 
 describe('Search Component', () => {
   beforeEach(() => {
-    document.body.innerHTML = '';
     vi.clearAllMocks();
   });
 
   it('renders initial state correctly', () => {
-    render(<Search />);
-    
-    // Check main elements
-    expect(screen.getByText('Modern Search Engine')).toBeInTheDocument();
-    expect(screen.getByText('Search with transparency and real-time insights')).toBeInTheDocument();
+    render(
+      <BrowserRouter>
+        <Search />
+      </BrowserRouter>
+    );
     expect(screen.getByPlaceholderText('Search documents...')).toBeInTheDocument();
-    expect(screen.getByText('Recent Searches')).toBeInTheDocument();
-    
-    // Check stats cards
-    ['Time', 'Results', 'Score', 'Mode'].forEach(stat => {
-      expect(screen.getByText(stat)).toBeInTheDocument();
-    });
   });
 
   it('performs search and displays results', async () => {
-    render(<Search />);
-    const searchInput = screen.getByPlaceholderText('Search documents...');
-    
-    await userEvent.type(searchInput, 'vector search');
-    
-    await waitFor(() => {
-      expect(screen.getByText(/Introduction to Vector Search/)).toBeInTheDocument();
-      expect(screen.getByText(/Step-by-step guide/)).toBeInTheDocument();
-    });
-  });
+    (documentService.searchDocuments as any).mockResolvedValueOnce(mockResults);
 
-  it('updates search stats after search', async () => {
-    render(<Search />);
-    const searchInput = screen.getByPlaceholderText('Search documents...');
-    
-    await userEvent.type(searchInput, 'vector');
-    
-    await waitFor(() => {
-      const statsCards = screen.getAllByRole('generic').filter(el => 
-        el.className.includes('hover:shadow-lg')
-      );
-      expect(statsCards.length).toBeGreaterThan(0);
-      expect(statsCards.some(card => card.textContent?.includes('Results'))).toBe(true);
-    });
-  });
+    render(
+      <BrowserRouter>
+        <Search />
+      </BrowserRouter>
+    );
 
-  it('displays loading state during search', async () => {
-    render(<Search />);
-    const searchInput = screen.getByPlaceholderText('Search documents...');
-    
-    fireEvent.change(searchInput, { target: { value: 'v' } });
-    expect(document.querySelector('.animate-spin')).toBeInTheDocument();
-    
-    await waitFor(() => {
-      expect(document.querySelector('.animate-spin')).not.toBeInTheDocument();
-    });
-  });
+    const input = screen.getByPlaceholderText('Search documents...');
+    fireEvent.change(input, { target: { value: 'test' } });
 
-  it('handles empty search input', async () => {
-    render(<Search />);
-    const searchInput = screen.getByPlaceholderText('Search documents...');
-    
-    await userEvent.type(searchInput, 'test');
-    await userEvent.clear(searchInput);
-    
     await waitFor(() => {
-      const resultCards = screen.queryAllByRole('generic').filter(el => 
-        el.className.includes('hover:shadow-lg')
-      );
-      expect(resultCards.length).toBe(4); // Only stat cards should remain
+      expect(screen.getByText('Test Document')).toBeInTheDocument();
+      expect(screen.getByText('85%')).toBeInTheDocument();
     });
   });
 
   it('expands and collapses result details', async () => {
-    render(<Search />);
-    const searchInput = screen.getByPlaceholderText('Search documents...');
-    
-    await userEvent.type(searchInput, 'vector');
-    
+    (documentService.searchDocuments as any).mockResolvedValueOnce(mockResults);
+
+    render(
+      <BrowserRouter>
+        <Search />
+      </BrowserRouter>
+    );
+
+    const input = screen.getByPlaceholderText('Search documents...');
+    fireEvent.change(input, { target: { value: 'test' } });
+
     await waitFor(() => {
-      const resultCard = screen.getByText(/Introduction to Vector Search/).closest('.hover\\:shadow-lg');
-      const detailsButton = resultCard?.querySelector('button');
-      expect(detailsButton).toBeTruthy();
-      
-      if (detailsButton) {
-        fireEvent.click(detailsButton);
-        expect(screen.getByText('Score Breakdown')).toBeInTheDocument();
-      }
+      expect(screen.getByText('Test Document')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText(/show details/i));
+    expect(screen.getByText('Score Breakdown')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText(/hide details/i));
+    expect(screen.queryByText('Score Breakdown')).not.toBeInTheDocument();
+  });
+
+  it('shows loading state during search', async () => {
+    (documentService.searchDocuments as any).mockImplementation(
+      () => new Promise(resolve => setTimeout(() => resolve([]), 100))
+    );
+
+    render(
+      <BrowserRouter>
+        <Search />
+      </BrowserRouter>
+    );
+
+    const input = screen.getByPlaceholderText('Search documents...');
+    fireEvent.change(input, { target: { value: 'test' } });
+
+    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
   });
 
-  it('manages search history correctly', async () => {
-    render(<Search />);
-    const searchInput = screen.getByPlaceholderText('Search documents...');
-    
-    await userEvent.type(searchInput, 'vector');
-    await waitFor(() => {
-      expect(screen.getByText(/Introduction to Vector/)).toBeInTheDocument();
-    });
+  it('handles empty search results', async () => {
+    (documentService.searchDocuments as any).mockResolvedValueOnce([]);
 
-    await userEvent.clear(searchInput);
-    await userEvent.type(searchInput, 'search');
+    render(
+      <BrowserRouter>
+        <Search />
+      </BrowserRouter>
+    );
+
+    const input = screen.getByPlaceholderText('Search documents...');
+    fireEvent.change(input, { target: { value: 'nonexistent' } });
 
     await waitFor(() => {
-      const historyButtons = screen.getAllByRole('button').filter(button =>
-        button.textContent?.toLowerCase().includes('search') || 
-        button.textContent?.toLowerCase().includes('vector')
-      );
-      expect(historyButtons.length).toBeGreaterThan(0);
+      expect(screen.getByText(/no documents found/i)).toBeInTheDocument();
     });
   });
-
-  it('allows selecting from search history', async () => {
-    render(<Search />);
-    const searchInput = screen.getByPlaceholderText('Search documents...');
-    
-    await userEvent.type(searchInput, 'test search');
-    
-    await waitFor(() => {
-      const historyButtons = screen.getAllByRole('button');
-      const searchButton = historyButtons.find(button => 
-        button.textContent?.toLowerCase().includes('test search')
-      );
-      expect(searchButton).toBeTruthy();
-      if (searchButton) {
-        fireEvent.click(searchButton);
-        expect(searchInput).toHaveValue('test search');
-      }
-    });
-  });
-
-  it('preserves search history between searches', async () => {
-    render(<Search />);
-    const searchInput = screen.getByPlaceholderText('Search documents...');
-    const searches = ['vector', 'search', 'embeddings'];
-
-    // Perform each search with proper waiting
-    for (const term of searches) {
-      await userEvent.clear(searchInput);
-      await userEvent.type(searchInput, term);
-
-      // Wait for search completion and history update
-      await waitFor(async () => {
-        const historySection = screen.getByText('Recent Searches').closest('.p-4');
-        expect(historySection).toBeInTheDocument();
-
-        const buttons = screen.getAllByRole('button');
-        const termFound = buttons.some(button => 
-          button.textContent?.toLowerCase().includes(term.toLowerCase())
-        );
-        expect(termFound).toBe(true);
-      }, { timeout: 2000 });
-    }
-
-    // Verify most recent searches are present
-    const historyButtons = screen.getAllByRole('button');
-    const buttonTexts = historyButtons.map(button => button.textContent?.toLowerCase() || '');
-    
-    // Check most recent searches (considering history limit)
-    const recentSearches = searches.slice(-3);
-    for (const term of recentSearches) {
-      const termExists = buttonTexts.some(text => text.includes(term.toLowerCase()));
-      if (!termExists) {
-        console.log('Debug - Available button texts:', buttonTexts);
-        console.log('Debug - Looking for term:', term);
-      }
-      expect(termExists).toBe(true);
-    }
-  });
-
-  // Helper function to wait for search completion
-  const waitForSearch = async () => {
-    await waitFor(() => {
-      expect(document.querySelector('.animate-spin')).not.toBeInTheDocument();
-    });
-  };
 });

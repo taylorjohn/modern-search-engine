@@ -1,191 +1,189 @@
 // src/services/documentService.ts
-import { MockDocument } from '../mockData';
+import { mockSearch, enhancedMockDocuments, type MockDocument } from '../mockData';
 
-interface VectorEntry {
-  id: string;
-  vector: number[];
-  metadata: {
-    title: string;
-    content: string;
-    fileName: string;
-    type: string;
-    created: string;
-    size: number;
-    headings: string[];
-    description?: string;
-    fileType: 'html' | 'pdf' | 'text' | 'markdown' | 'code';
-  };
-  // Store the original content for highlighting
-  originalContent: string;
+export interface ProcessingStatus {
+  filename: string;
+  status: 'processing' | 'complete' | 'error';
+  progress?: number;
+  error?: string;
+}
+
+interface ProcessingSubscriber {
+  (updates: ProcessingStatus[]): void;
 }
 
 class DocumentService {
-  private vectorStore: VectorEntry[] = [];
+  private subscribers: ProcessingSubscriber[] = [];
+  private processingDocuments: ProcessingStatus[] = [];
+  private documents: MockDocument[] = [];
 
-  private parseHTML(html: string): { 
-    text: string; 
-    title?: string; 
-    headings: string[];
-    description?: string;
-  } {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    
-    // Extract title
-    const title = doc.title || doc.querySelector('h1')?.textContent;
-
-    // Extract meta description
-    const description = doc.querySelector('meta[name="description"]')?.getAttribute('content');
-
-    // Extract headings
-    const headings = Array.from(doc.querySelectorAll('h1, h2, h3, h4, h5, h6'))
-      .map(h => h.textContent?.trim())
-      .filter(Boolean) as string[];
-
-    // Extract text content, excluding scripts and styles
-    const scripts = doc.querySelectorAll('script, style');
-    scripts.forEach(s => s.remove());
-    const text = doc.body.textContent?.trim() || '';
-
-    return { text, title, headings, description };
-  }
-
-  private cosineSimilarity(a: number[], b: number[]): number {
-    if (a.length !== b.length) return 0;
-    let dotProduct = 0;
-    let normA = 0;
-    let normB = 0;
-    for (let i = 0; i < a.length; i++) {
-      dotProduct += a[i] * b[i];
-      normA += a[i] * a[i];
-      normB += b[i] * b[i];
-    }
-    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
-  }
-
-  private textToVector(text: string): number[] {
-    // For demo, create a simple vector based on character frequencies
-    const vector = new Array(128).fill(0);
-    for (let char of text) {
-      const code = char.charCodeAt(0);
-      if (code < 128) {
-        vector[code]++;
-      }
-    }
-    const sum = Math.sqrt(vector.reduce((acc, val) => acc + val * val, 0));
-    return vector.map(val => val / (sum || 1));
-  }
-
-  private findBestSnippet(content: string, query: string, snippetLength: number = 200): string {
-    const words = content.split(/\s+/);
-    const queryWords = new Set(query.toLowerCase().split(/\s+/));
-    let bestScore = 0;
-    let bestStart = 0;
-
-    for (let i = 0; i < words.length - snippetLength; i++) {
-      let score = 0;
-      for (let j = 0; j < snippetLength; j++) {
-        if (queryWords.has(words[i + j].toLowerCase())) {
-          score++;
-        }
-      }
-      if (score > bestScore) {
-        bestScore = score;
-        bestStart = i;
-      }
-    }
-
-    const snippet = words.slice(bestStart, bestStart + snippetLength).join(' ');
-    return snippet + (bestStart + snippetLength < words.length ? '...' : '');
-  }
-
-  async processDocument(file: File): Promise<VectorEntry> {
-    const content = await file.text();
-    let processedContent: string;
-    let title: string = file.name;
-    let headings: string[] = [];
-    let description: string | undefined;
-    let fileType: VectorEntry['metadata']['fileType'] = 'text';
-
-    // Process based on file type
-    if (file.type === 'text/html') {
-      const parsed = this.parseHTML(content);
-      processedContent = parsed.text;
-      if (parsed.title) title = parsed.title;
-      headings = parsed.headings;
-      description = parsed.description;
-      fileType = 'html';
-    } else {
-      processedContent = content;
-      fileType = 'text';
-    }
-
-    const vector = this.textToVector(processedContent);
-
-    const entry: VectorEntry = {
-      id: Math.random().toString(36).substring(7),
-      vector,
-      metadata: {
-        title,
-        content: processedContent.slice(0, 200) + '...',
-        fileName: file.name,
-        type: file.type,
-        created: new Date().toISOString(),
-        size: file.size,
-        headings,
-        description,
-        fileType
-      },
-      originalContent: content
+  async uploadDocument(file: File): Promise<void> {
+    const processingStatus: ProcessingStatus = {
+      filename: file.name,
+      status: 'processing',
+      progress: 0
     };
 
-    this.vectorStore.push(entry);
-    return entry;
+    this.processingDocuments.push(processingStatus);
+    this.notifySubscribers();
+
+    try {
+      // Read file content
+      const content = await this.readFileContent(file);
+      
+      // Create document with consistent structure
+      const processedDocument: MockDocument = {
+        id: Math.random().toString(36).substr(2, 9),
+        title: file.name,
+        content: content,
+        documentType: this.getDocumentType(file.type),
+        scores: {
+          textScore: 0,
+          vectorScore: 0,
+          finalScore: 0
+        },
+        metadata: {
+          author: 'User Upload',
+          created: new Date().toISOString(),
+          wordCount: content.split(/\s+/).length,
+          type: this.getDocumentType(file.type)
+        },
+        tags: [this.getDocumentType(file.type), 'user-upload']
+      };
+
+      // Simulate processing with multiple steps
+      await this.processDocument(processingStatus, processedDocument);
+
+      // Add to documents array
+      this.documents.push(processedDocument);
+      
+      // Update status
+      processingStatus.status = 'complete';
+      processingStatus.progress = 100;
+      this.notifySubscribers();
+
+      console.log('Document processed successfully:', processedDocument.title);
+
+    } catch (error) {
+      console.error('Error processing document:', error);
+      processingStatus.status = 'error';
+      processingStatus.error = error instanceof Error ? error.message : 'Unknown error';
+      this.notifySubscribers();
+    }
+
+    // Remove from processing queue after delay
+    setTimeout(() => {
+      this.processingDocuments = this.processingDocuments.filter(
+        doc => doc.filename !== file.name
+      );
+      this.notifySubscribers();
+    }, 2000);
   }
 
   async searchDocuments(query: string): Promise<MockDocument[]> {
-    const queryVector = this.textToVector(query);
+    if (!query.trim()) {
+      return [];
+    }
+
+    // Combine mock documents with uploaded documents
+    const allDocuments = [...enhancedMockDocuments, ...this.documents];
     
-    const results = this.vectorStore
-      .map(entry => {
-        const similarity = this.cosineSimilarity(queryVector, entry.vector);
-        const bestSnippet = this.findBestSnippet(entry.metadata.content, query);
+    // Filter documents based on query
+    const matchingDocuments = allDocuments.filter(doc => {
+      const searchableText = `${doc.title} ${doc.content}`.toLowerCase();
+      return searchableText.includes(query.toLowerCase());
+    });
 
-        return {
-          id: entry.id,
-          title: entry.metadata.title,
-          content: bestSnippet,
-          documentType: entry.metadata.fileType,
-          scores: {
-            textScore: Math.random() * 0.5 + 0.5,
-            vectorScore: similarity,
-            finalScore: similarity
-          },
-          metadata: {
-            author: 'System',
-            created: entry.metadata.created,
-            wordCount: entry.metadata.content.split(/\s+/).length,
-            type: entry.metadata.type,
-            fileSize: entry.metadata.size,
-            language: entry.metadata.fileType === 'html' ? 'HTML' : 'Text'
-          },
-          tags: [
-            entry.metadata.fileType,
-            ...entry.metadata.headings.slice(0, 3)
-          ]
-        };
-      })
-      .sort((a, b) => b.scores.finalScore - a.scores.finalScore);
-
-    return results;
+    // Calculate scores for matching documents
+    return matchingDocuments.map(doc => ({
+      ...doc,
+      scores: {
+        ...doc.scores,
+        textScore: this.calculateTextScore(doc, query),
+        vectorScore: this.calculateVectorScore(),
+        finalScore: Math.random() * 0.3 + 0.7 // Temporary scoring for demo
+      }
+    }));
   }
 
-  getDocuments(): VectorEntry[] {
-    return this.vectorStore;
+  subscribeToProcessing(callback: ProcessingSubscriber) {
+    this.subscribers.push(callback);
+    return {
+      unsubscribe: () => {
+        this.subscribers = this.subscribers.filter(sub => sub !== callback);
+      }
+    };
   }
 
-  clearStore(): void {
-    this.vectorStore = [];
+  // Helper methods
+  private notifySubscribers() {
+    this.subscribers.forEach(subscriber => subscriber([...this.processingDocuments]));
+  }
+
+  private async readFileContent(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsText(file);
+    });
+  }
+
+  private getDocumentType(mimeType: string): 'pdf' | 'html' | 'text' | 'markdown' | 'code' {
+    const types: Record<string, 'pdf' | 'html' | 'text' | 'markdown' | 'code'> = {
+      'text/plain': 'text',
+      'text/html': 'html',
+      'application/pdf': 'pdf',
+      'text/markdown': 'markdown',
+      'text/javascript': 'code',
+      'text/typescript': 'code'
+    };
+    return types[mimeType] || 'text';
+  }
+
+  private async processDocument(status: ProcessingStatus, document: MockDocument) {
+    const totalSteps = 5;
+    const stepTime = 500;
+
+    for (let step = 1; step <= totalSteps; step++) {
+      await new Promise(resolve => setTimeout(resolve, stepTime));
+      
+      status.progress = (step / totalSteps) * 100;
+      this.notifySubscribers();
+
+      // Simulate different processing stages
+      switch (step) {
+        case 1:
+          document.scores.textScore = Math.random();
+          break;
+        case 2:
+          document.scores.vectorScore = Math.random();
+          break;
+        case 3:
+          document.scores.finalScore = (document.scores.textScore + document.scores.vectorScore) / 2;
+          break;
+        case 4:
+          // Add extra metadata
+          document.metadata.wordCount = document.content.split(/\s+/).length;
+          break;
+        case 5:
+          // Finalize document
+          document.tags.push(`processed`);
+          break;
+      }
+    }
+  }
+
+  private calculateTextScore(doc: MockDocument, query: string): number {
+    const docText = `${doc.title} ${doc.content}`.toLowerCase();
+    const queryTerms = query.toLowerCase().split(/\s+/);
+    const matches = queryTerms.filter(term => docText.includes(term));
+    return matches.length / queryTerms.length;
+  }
+
+  private calculateVectorScore(): number {
+    // Simplified vector similarity score for demo
+    return Math.random() * 0.3 + 0.7;
   }
 }
 

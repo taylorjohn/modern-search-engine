@@ -1,31 +1,26 @@
 // src/__tests__/setup.ts
+import React from 'react';
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
-// Mock IntersectionObserver
-class MockIntersectionObserver {
-  observe = vi.fn();
-  unobserve = vi.fn();
-  disconnect = vi.fn();
-}
+// Mock UI components
+const mockComponents = {
+  Card: ({ children, className, ...props }) => 
+    React.createElement('div', { 'data-testid': 'mock-card', className, ...props }, children),
+  CardContent: ({ children, className, ...props }) => 
+    React.createElement('div', { 'data-testid': 'mock-card-content', className, ...props }, children),
+  CardHeader: ({ children, className, ...props }) => 
+    React.createElement('div', { 'data-testid': 'mock-card-header', className, ...props }, children),
+  CardTitle: ({ children, className, ...props }) => 
+    React.createElement('div', { 'data-testid': 'mock-card-title', className, ...props }, children)
+};
 
-Object.defineProperty(window, 'IntersectionObserver', {
-  writable: true,
-  configurable: true,
-  value: MockIntersectionObserver
-});
+vi.mock('@/components/ui/card', () => mockComponents);
+vi.mock('@/components/ui/button', () => ({
+  Button: ({ children, ...props }) => 
+    React.createElement('button', { 'data-testid': 'mock-button', ...props }, children)
+}));
 
-// Mock matchMedia
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: vi.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
-});
+vi.mock('@/components/ui/input', () => ({
+  Input: (props) => React.createElement('input', { 'data-testid': 'mock-input', ...props })
+}));

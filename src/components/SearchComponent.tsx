@@ -1,5 +1,5 @@
+// src/components/SearchComponent.tsx
 import React, { useState, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { 
   Search as SearchIcon, 
   ChevronDown, 
@@ -8,12 +8,11 @@ import {
   Clock, 
   Hash, 
   Zap, 
-  History, 
-  Upload 
+  History 
 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '../components/ui/card';
+import { Input } from '../components/ui/input';
+import DocumentUpload from './DocumentUpload';
 import { documentService } from '../services/documentService';
 import type { MockDocument } from '../mockData';
 import type { ProcessingStatus } from '../services/documentService';
@@ -44,26 +43,23 @@ const MetricCard = ({ title, value, icon: Icon, testId }: MetricCardProps) => (
   </Card>
 );
 
-function ScoreBar({ label, score, color = "bg-blue-600" }) {
-  return (
-    <div className="flex items-center gap-2" data-testid={`score-bar-${label.toLowerCase().replace(/\s+/g, '-')}`}>
-      <span className="w-24 text-sm text-gray-600">{label}:</span>
-      <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
-        <div
-          className={`${color} h-full transition-all duration-1000 ease-out`}
-          style={{ width: `${score * 100}%` }}
-          data-testid="score-bar-fill"
-        />
-      </div>
-      <span className="w-16 text-sm text-gray-600 text-right" data-testid="score-value">
-        {(score * 100).toFixed(1)}%
-      </span>
+const ScoreBar = ({ label, score, color = "bg-blue-600" }) => (
+  <div className="flex items-center gap-2">
+    <span className="w-24 text-sm text-gray-600">{label}:</span>
+    <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
+      <div
+        className={`${color} h-full transition-all duration-1000 ease-out`}
+        style={{ width: `${score * 100}%` }}
+        data-testid="score-bar-fill"
+      />
     </div>
-  );
-}
+    <span className="w-16 text-sm text-gray-600 text-right">
+      {(score * 100).toFixed(1)}%
+    </span>
+  </div>
+);
 
-export default function Search() {
-  const navigate = useNavigate();
+export default function SearchComponent() {
   const [query, setQuery] = useState('');
   const [expandedItems, setExpandedItems] = useState(new Set<string>());
   const [isLoading, setIsLoading] = useState(false);
@@ -151,23 +147,13 @@ export default function Search() {
   ];
 
   return (
-    <div className="container mx-auto px-4" data-testid="search-container">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-4xl font-bold">Modern Search Engine</h1>
-          <p className="text-gray-600">Search uploaded documents with vector similarity</p>
-        </div>
-        <Button
-          onClick={() => navigate('/upload')}
-          className="flex items-center gap-2"
-          data-testid="upload-button"
-        >
-          <Upload className="h-4 w-4" />
-          Upload Documents
-        </Button>
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold">Modern Search Engine</h1>
+        <p className="text-gray-600">Search uploaded documents with vector similarity</p>
       </div>
 
-      <div className="relative flex-1">
+      <div className="relative">
         <Input
           type="text"
           value={query}
@@ -179,20 +165,20 @@ export default function Search() {
         {isLoading ? (
           <div 
             className="absolute right-3 top-2.5 animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full"
-            role="progressbar"
+            role="progressbar" 
             aria-label="Loading search results"
-            data-testid="search-loading"
           />
         ) : (
           <SearchIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
         )}
       </div>
 
+      <DocumentUpload />
+
       {processingDocuments.length > 0 && (
-        <div className="mt-6 space-y-2" data-testid="processing-documents">
-          <h2 className="text-lg font-semibold">Processing Documents</h2>
+        <div className="mt-6 space-y-2">
           {processingDocuments.map((doc) => (
-            <Card key={doc.filename} className="hover:shadow-lg transition-all duration-200">
+            <Card key={doc.filename}>
               <CardContent className="p-4">
                 <div className="flex justify-between items-center">
                   <div>
@@ -202,33 +188,16 @@ export default function Search() {
                        doc.status === 'complete' ? 'Complete' : 'Error'}
                     </p>
                   </div>
-                  {doc.status === 'complete' && (
-                    <span className="text-green-500">✓</span>
-                  )}
-                  {doc.status === 'error' && (
-                    <span className="text-red-500">⚠</span>
-                  )}
-                </div>
-                
-                {doc.status === 'processing' && doc.progress && (
-                  <div className="mt-2">
-                    <div className="flex justify-between text-sm text-gray-600 mb-1">
-                      <span>Progress</span>
-                      <span>{Math.round(doc.progress)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                  
+                  {doc.progress !== undefined && (
+                    <div className="w-32 bg-gray-200 rounded-full h-2">
                       <div
                         className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                         style={{ width: `${doc.progress}%` }}
-                        data-testid="progress-bar"
                       />
                     </div>
-                  </div>
-                )}
-                
-                {doc.error && (
-                  <p className="mt-2 text-sm text-red-500">{doc.error}</p>
-                )}
+                  )}
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -242,13 +211,12 @@ export default function Search() {
               <History className="h-4 w-4" />
               Recent Searches
             </h3>
-            <div className="flex flex-wrap gap-2" data-testid="search-history">
+            <div className="flex flex-wrap gap-2">
               {searchHistory.map((item, index) => (
                 <button
                   key={index}
                   onClick={() => handleHistorySelect(item.query)}
                   className="px-3 py-1 text-sm bg-gray-100 rounded-full hover:bg-gray-200 transition-colors flex items-center gap-2 group"
-                  data-testid="history-item"
                 >
                   <span>{item.query}</span>
                   <span className="text-xs text-gray-500 group-hover:text-gray-700">({item.results})</span>
@@ -259,7 +227,7 @@ export default function Search() {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6" data-testid="metrics-grid">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
         {statsData.map(({ title, value, icon, testId }) => (
           <MetricCard
             key={title}
@@ -273,14 +241,14 @@ export default function Search() {
 
       {results.length === 0 && query && !isLoading ? (
         <Card className="mt-8">
-          <CardContent className="p-6 text-center text-gray-500" data-testid="no-results">
+          <CardContent className="p-6 text-center text-gray-500">
             No documents found. Try uploading some documents first.
           </CardContent>
         </Card>
       ) : (
-        <div className="mt-8 space-y-4" data-testid="search-results">
+        <div className="mt-8 space-y-4">
           {results.map((result) => (
-            <Card key={result.id} className="hover:shadow-lg transition-all duration-200">
+            <Card key={result.id}>
               <CardContent className="p-6">
                 <div className="flex justify-between">
                   <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -289,7 +257,7 @@ export default function Search() {
                       ({result.documentType})
                     </span>
                   </h2>
-                  <span className="text-2xl font-bold text-blue-600" data-testid="result-score">
+                  <span className="text-2xl font-bold text-blue-600">
                     {(result.scores.finalScore * 100).toFixed(0)}%
                   </span>
                 </div>
@@ -308,7 +276,7 @@ export default function Search() {
                 </button>
 
                 {expandedItems.has(result.id) && (
-                  <div className="mt-4 pt-4 border-t space-y-4 animate-fade-in" data-testid="result-details">
+                  <div className="mt-4 pt-4 border-t space-y-4 animate-fade-in">
                     <div className="space-y-2">
                       <h3 className="text-sm font-medium">Score Breakdown</h3>
                       <ScoreBar label="Vector Score" score={result.scores.vectorScore} color="bg-purple-500" />
