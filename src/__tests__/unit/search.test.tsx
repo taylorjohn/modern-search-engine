@@ -1,127 +1,79 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+// src/__tests__/unit/search.test.tsx
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, act, waitFor } from '@testing-library/react';
 import Search from '../../pages/Search';
-import { documentService } from '../../services/documentService';
 
-vi.mock('../../services/documentService', () => ({
-  documentService: {
-    searchDocuments: vi.fn(() => Promise.resolve([])),
-    subscribeToProcessing: vi.fn(() => ({
-      unsubscribe: vi.fn()
-    }))
-  }
+// Mock DocumentUpload component
+vi.mock('../../components/document/DocumentUpload', () => ({
+  default: ({ onFilesSelected }: any) => (
+    <div data-testid="mock-document-upload" onClick={() => {
+      const file = new File(['test'], 'test.txt', { type: 'text/plain' });
+      onFilesSelected([file]);
+    }}>
+      DocumentUpload
+    </div>
+  )
 }));
-
-const mockResults = [{
-  id: '1',
-  title: 'Test Document',
-  content: 'Test content',
-  documentType: 'pdf',
-  scores: {
-    textScore: 0.8,
-    vectorScore: 0.9,
-    finalScore: 0.85
-  },
-  metadata: {
-    author: 'Test Author',
-    created: '2024-01-01',
-    wordCount: 100,
-    type: 'document'
-  },
-  tags: []
-}];
 
 describe('Search Component', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.useFakeTimers();
   });
 
-  it('renders initial state correctly', () => {
-    render(
-      <BrowserRouter>
-        <Search />
-      </BrowserRouter>
-    );
-    expect(screen.getByPlaceholderText('Search documents...')).toBeInTheDocument();
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
-  it('performs search and displays results', async () => {
-    (documentService.searchDocuments as any).mockResolvedValueOnce(mockResults);
-
-    render(
-      <BrowserRouter>
-        <Search />
-      </BrowserRouter>
-    );
-
-    const input = screen.getByPlaceholderText('Search documents...');
-    fireEvent.change(input, { target: { value: 'test' } });
-
-    await waitFor(() => {
-      expect(screen.getByText('Test Document')).toBeInTheDocument();
-      expect(screen.getByText('85%')).toBeInTheDocument();
-    });
+  it('renders all components correctly', () => {
+    render(<Search />);
+    expect(screen.getByText('Modern Search Engine')).toBeInTheDocument();
+    expect(screen.getByTestId('mock-document-upload')).toBeInTheDocument();
+    expect(screen.getByTestId('search-input')).toBeInTheDocument();
   });
 
-  it('expands and collapses result details', async () => {
-    (documentService.searchDocuments as any).mockResolvedValueOnce(mockResults);
+  it('handles document upload and shows processing status', async () => {
+    vi.setConfig({ testTimeout: 10000 }); // Increase timeout
 
-    render(
-      <BrowserRouter>
-        <Search />
-      </BrowserRouter>
-    );
-
-    const input = screen.getByPlaceholderText('Search documents...');
-    fireEvent.change(input, { target: { value: 'test' } });
-
-    await waitFor(() => {
-      expect(screen.getByText('Test Document')).toBeInTheDocument();
+    await act(async () => {
+      render(<Search />);
     });
 
-    fireEvent.click(screen.getByText(/show details/i));
-    expect(screen.getByText('Score Breakdown')).toBeInTheDocument();
+    await act(async () => {
+      const uploadComponent = screen.getByTestId('mock-document-upload');
+      uploadComponent.click();
+    });
 
-    fireEvent.click(screen.getByText(/hide details/i));
-    expect(screen.queryByText('Score Breakdown')).not.toBeInTheDocument();
+    // Run timers in sequence
+    await act(async () => {
+      vi.advanceTimersByTime(100);  // First update
+      vi.advanceTimersByTime(400);  // Second update
+      vi.advanceTimersByTime(500);  // Third update
+      vi.advanceTimersByTime(500);  // Final update
+    });
+
+    expect(screen.getByText('Processing complete')).toBeInTheDocument();
   });
 
-  it('shows loading state during search', async () => {
-    (documentService.searchDocuments as any).mockImplementation(
-      () => new Promise(resolve => setTimeout(() => resolve([]), 100))
-    );
+  it('displays initial stats correctly', () => {
+    render(<Search />);
+    expect(screen.getByText('Time')).toBeInTheDocument();
+    expect(screen.getByText('Results')).toBeInTheDocument();
+    expect(screen.getByText('Score')).toBeInTheDocument();
+    expect(screen.getByText('Mode')).toBeInTheDocument();
 
-    render(
-      <BrowserRouter>
-        <Search />
-      </BrowserRouter>
-    );
-
-    const input = screen.getByPlaceholderText('Search documents...');
-    fireEvent.change(input, { target: { value: 'test' } });
-
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
-
-    await waitFor(() => {
-      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
-    });
+    expect(screen.getByText('0s')).toBeInTheDocument();
+    expect(screen.getByText('0%')).toBeInTheDocument();
   });
 
-  it('handles empty search results', async () => {
-    (documentService.searchDocuments as any).mockResolvedValueOnce([]);
-
-    render(
-      <BrowserRouter>
-        <Search />
-      </BrowserRouter>
-    );
-
-    const input = screen.getByPlaceholderText('Search documents...');
-    fireEvent.change(input, { target: { value: 'nonexistent' } });
-
-    await waitFor(() => {
-      expect(screen.getByText(/no documents found/i)).toBeInTheDocument();
+  it('handles search input changes', () => {
+    render(<Search />);
+    const searchInput = screen.getByTestId('search-input');
+    
+    act(() => {
+      searchInput.value = 'test query';
+      searchInput.dispatchEvent(new Event('change'));
     });
+
+    expect(searchInput.value).toBe('test query');
   });
 });

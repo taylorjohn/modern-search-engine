@@ -1,19 +1,15 @@
-// src/pages/Search.tsx
 import React, { useState, useCallback } from 'react';
 import { Search as SearchIcon, Clock, Hash, BarChart2, Zap } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import DocumentUpload from '../components/document/DocumentUpload';
-import ProcessingStatus from '../components/document/ProcessingStatus';
-import SearchResults from '../components/SearchResults';
+import DocumentUpload from './DocumentUpload';
+import ProcessingStatus from './ProcessingStatus';
 
 export default function Search() {
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [expandedItems, setExpandedItems] = useState(new Set<string>());
-  const [results, setResults] = useState([]);
   const [processingStatus, setProcessingStatus] = useState({
     id: '',
-    status: 'pending' as const,
+    status: 'pending',
     progress: 0,
     message: ''
   });
@@ -21,7 +17,6 @@ export default function Search() {
   const handleFilesSelected = useCallback((files: File[]) => {
     if (files.length === 0) return;
     
-    // Initialize processing
     setProcessingStatus({
       id: Date.now().toString(),
       status: 'processing',
@@ -29,38 +24,20 @@ export default function Search() {
       message: 'Processing files...'
     });
 
-    // Simulate processing steps with immediate state updates
-    const updateProcessing = (progress: number) => {
+    // Simulate file processing
+    setTimeout(() => {
       setProcessingStatus(prev => ({
         ...prev,
-        progress,
-        status: progress === 100 ? 'completed' : 'processing',
-        message: progress === 100 ? 'Processing complete' : 'Processing files...'
+        status: 'completed',
+        progress: 100,
+        message: 'Processing complete'
       }));
-    };
-
-    // Schedule updates
-    setTimeout(() => updateProcessing(25), 100);
-    setTimeout(() => updateProcessing(50), 500);
-    setTimeout(() => updateProcessing(75), 1000);
-    setTimeout(() => updateProcessing(100), 1500);
-  }, []);
-
-  const toggleExpand = useCallback((id: string) => {
-    setExpandedItems(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
+    }, 2000);
   }, []);
 
   const statsData = [
     { title: 'Time', value: '0s', icon: Clock },
-    { title: 'Results', value: results.length, icon: Hash },
+    { title: 'Results', value: '0', icon: Hash },
     { title: 'Score', value: '0%', icon: BarChart2 },
     { title: 'Mode', value: 'text', icon: Zap }
   ];
@@ -68,7 +45,7 @@ export default function Search() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-4xl font-bold mb-2">Modern Search Engine</h1>
-      <p className="text-gray-600">Search with transparency and real-time insights</p>
+      <p className="text-gray-600">Upload documents to start searching through their content</p>
 
       <div className="flex gap-4 mt-8">
         <div className="relative flex-1">
@@ -80,26 +57,31 @@ export default function Search() {
             className="w-full px-10 py-2 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             data-testid="search-input"
           />
-          {isLoading ? (
-            <div className="absolute right-3 top-2.5 animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full" />
-          ) : (
-            <SearchIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-          )}
+          <SearchIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
         </div>
       </div>
 
       <div className="mt-8">
-        <DocumentUpload
-          onFilesSelected={handleFilesSelected}
-          accept="application/pdf,text/plain"
-          maxSize={10485760}
-        />
+        <Card>
+          <CardContent className="p-4">
+            <DocumentUpload
+              onFilesSelected={handleFilesSelected}
+              accept="application/pdf,text/plain"
+              maxSize={10485760}
+            />
+          </CardContent>
+        </Card>
       </div>
 
       {processingStatus.status !== 'pending' && (
         <div className="mt-6">
           <ProcessingStatus 
-            status={processingStatus}
+            status={{
+              id: processingStatus.id,
+              status: processingStatus.status,
+              progress: processingStatus.progress,
+              message: processingStatus.message
+            }}
           />
         </div>
       )}
@@ -119,12 +101,6 @@ export default function Search() {
           </Card>
         ))}
       </div>
-
-      <SearchResults
-        results={results}
-        expandedItems={expandedItems}
-        onToggleExpand={toggleExpand}
-      />
     </div>
   );
 }

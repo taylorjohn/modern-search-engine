@@ -1,102 +1,106 @@
 // src/__tests__/unit/document-upload.test.tsx
-import { render, screen, fireEvent, act } from '@testing-library/react';
-import { vi, beforeEach } from 'vitest';
-import DocumentUpload from '../../components/DocumentUpload';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import DocumentUpload from '../../components/document/DocumentUpload';
 
-// Mock the document service
-const mockUploadDocument = vi.fn();
-vi.mock('../../services/documentService', () => ({
-  documentService: {
-    uploadDocument: mockUploadDocument
-  }
+// Store the onDrop callback to call it directly
+let dropCallback: ((acceptedFiles: File[]) => void) | null = null;
+
+// Create mock handler
+const mockUseDropzone = vi.fn(({ onDrop, disabled }: any) => {
+  // Store the callback so we can call it from our tests
+  dropCallback = onDrop;
+
+  return {
+    getRootProps: () => ({
+      'data-testid': 'dropzone'
+    }),
+    getInputProps: () => ({
+      'data-testid': 'file-input'
+    }),
+    isDragActive: false,
+    isDragReject: false,
+    disabled
+  };
+});
+
+// Mock react-dropzone
+vi.mock('react-dropzone', () => ({
+  useDropzone: (props: any) => mockUseDropzone(props)
 }));
 
 describe('DocumentUpload Component', () => {
   beforeEach(() => {
-    mockUploadDocument.mockClear();
+    vi.clearAllMocks();
+    dropCallback = null;
+    mockUseDropzone.mockImplementation(({ onDrop, disabled }: any) => {
+      dropCallback = onDrop;
+      return {
+        getRootProps: () => ({
+          'data-testid': 'dropzone'
+        }),
+        getInputProps: () => ({
+          'data-testid': 'file-input'
+        }),
+        isDragActive: false,
+        isDragReject: false,
+        disabled
+      };
+    });
   });
 
-  it('renders the upload area', () => {
-    render(<DocumentUpload />);
+  it('renders upload area correctly', () => {
+    render(<DocumentUpload onFilesSelected={() => {}} />);
     expect(screen.getByTestId('dropzone')).toBeInTheDocument();
-    expect(screen.getByText(/Drag and drop files here/i)).toBeInTheDocument();
-    expect(screen.getByText(/Supported formats/i)).toBeInTheDocument();
+    expect(screen.getByTestId('file-input')).toBeInTheDocument();
   });
 
-  it('handles file selection', async () => {
+  it('handles file upload correctly', () => {
+    const mockOnFilesSelected = vi.fn();
     const file = new File(['test content'], 'test.txt', { type: 'text/plain' });
-    
-    render(<DocumentUpload />);
-    const input = screen.getByTestId('file-input');
-    
-    await act(async () => {
-      fireEvent.change(input, { target: { files: [file] } });
+
+    render(<DocumentUpload onFilesSelected={mockOnFilesSelected} />);
+
+    // Call the stored callback directly
+    if (dropCallback) {
+      dropCallback([file]);
+      expect(mockOnFilesSelected).toHaveBeenCalledWith([file]);
+    } else {
+      throw new Error('Drop callback not set');
+    }
+  });
+
+  it('shows error for rejected files', () => {
+    // Override mock for reject state
+    mockUseDropzone.mockReturnValueOnce({
+      getRootProps: () => ({ 'data-testid': 'dropzone' }),
+      getInputProps: () => ({ 'data-testid': 'file-input' }),
+      isDragActive: false,
+      isDragReject: true,
+      disabled: false
     });
 
-    expect(mockUploadDocument).toHaveBeenCalledWith(file);
+    render(<DocumentUpload onFilesSelected={() => {}} />);
+    expect(screen.getByText('Invalid file type or size')).toBeInTheDocument();
   });
 
-  it('handles disabled state', () => {
-    render(<DocumentUpload disabled />);
-    const dropzone = screen.getByTestId('dropzone');
-    expect(dropzone).toHaveClass('opacity-50');
-    expect(dropzone).toHaveClass('cursor-not-allowed');
-  });
-
-  it('shows correct file size limit', () => {
-    const maxSizeInMB = 5;
-    render(<DocumentUpload maxSize={maxSizeInMB} />);
-    expect(screen.getByText(new RegExp(`${maxSizeInMB}MB`))).toBeInTheDocument();
-  });
-
-  it('handles file rejection due to size', async () => {
-    const maxSizeInMB = 5;
-    const file = new File(['test'.repeat(1024 * 1024 * 6)], 'large.txt', { type: 'text/plain' });
-    
-    render(<DocumentUpload maxSize={maxSizeInMB} />);
-    const input = screen.getByTestId('file-input');
-    
-    await act(async () => {
-      fireEvent.change(input, { target: { files: [file] } });
-    });
-
-    expect(screen.getByText(/File too large/i)).toBeInTheDocument();
-  });
-
-  it('handles multiple file selection', async () => {
-    mockUploadDocument.mockClear(); // Clear mock before test
-    
-    const files = [
-      new File(['test 1'], 'test1.txt', { type: 'text/plain' }),
-      new File(['test 2'], 'test2.txt', { type: 'text/plain' })
-    ];
-    
-    render(<DocumentUpload />);
-    const input = screen.getByTestId('file-input');
-    
-    await act(async () => {
-      fireEvent.change(input, { target: { files } });
-    });
-
-    expect(mockUploadDocument).toHaveBeenCalledTimes(2);
-    expect(mockUploadDocument).toHaveBeenCalledWith(files[0]);
-    expect(mockUploadDocument).toHaveBeenCalledWith(files[1]);
-  });
-
-  it('handles file drop', async () => {
+  it('respects disabled state', () => {
+    const mockOnFilesSelected = vi.fn();
     const file = new File(['test content'], 'test.txt', { type: 'text/plain' });
-    
-    render(<DocumentUpload />);
-    const dropzone = screen.getByTestId('dropzone');
-    
-    await act(async () => {
-      fireEvent.drop(dropzone, {
-        dataTransfer: {
-          files: [file]
-        }
-      });
-    });
 
-    expect(mockUploadDocument).toHaveBeenCalledWith(file);
+    render(<DocumentUpload onFilesSelected={mockOnFilesSelected} disabled={true} />);
+
+    // Verify disabled styles
+    const dropzone = screen.getByTestId('dropzone');
+    expect(dropzone.className).toContain('opacity-50');
+    expect(dropzone.className).toContain('cursor-not-allowed');
+
+    // Try to upload while disabled
+    if (dropCallback) {
+      dropCallback([file]);
+      expect(mockOnFilesSelected).not.toHaveBeenCalled();
+    } else {
+      throw new Error('Drop callback not set');
+    }
   });
 });

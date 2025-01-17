@@ -1,26 +1,39 @@
-// src/__tests__/setup.ts
-import React from 'react';
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
-// Mock UI components
-const mockComponents = {
-  Card: ({ children, className, ...props }) => 
-    React.createElement('div', { 'data-testid': 'mock-card', className, ...props }, children),
-  CardContent: ({ children, className, ...props }) => 
-    React.createElement('div', { 'data-testid': 'mock-card-content', className, ...props }, children),
-  CardHeader: ({ children, className, ...props }) => 
-    React.createElement('div', { 'data-testid': 'mock-card-header', className, ...props }, children),
-  CardTitle: ({ children, className, ...props }) => 
-    React.createElement('div', { 'data-testid': 'mock-card-title', className, ...props }, children)
-};
-
-vi.mock('@/components/ui/card', () => mockComponents);
-vi.mock('@/components/ui/button', () => ({
-  Button: ({ children, ...props }) => 
-    React.createElement('button', { 'data-testid': 'mock-button', ...props }, children)
+// Mock react-dropzone
+vi.mock('react-dropzone', () => ({
+  useDropzone: vi.fn(() => ({
+    getRootProps: () => ({
+      'data-testid': 'dropzone'
+    }),
+    getInputProps: () => ({
+      'data-testid': 'file-input'
+    }),
+    isDragActive: false,
+    isDragReject: false,
+    onDrop: vi.fn()
+  }))
 }));
 
-vi.mock('@/components/ui/input', () => ({
-  Input: (props) => React.createElement('input', { 'data-testid': 'mock-input', ...props })
-}));
+// Mock FileReader
+class MockFileReader {
+  onload: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
+  onerror: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
+  result: string | ArrayBuffer | null = null;
+
+  readAsText(file: Blob) {
+    setTimeout(() => {
+      this.result = 'Mock file content';
+      this.onload?.call(this, new ProgressEvent('load'));
+    }, 0);
+  }
+}
+
+global.FileReader = MockFileReader as any;
+
+// Mock window.fs
+vi.stubGlobal('fs', {
+  readFile: vi.fn().mockResolvedValue(new Uint8Array(Buffer.from('test content'))),
+  writeFile: vi.fn().mockResolvedValue(undefined)
+});
