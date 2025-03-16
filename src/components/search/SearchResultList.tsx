@@ -52,7 +52,7 @@ export default function SearchResultList({ results, isLoading, query }: SearchRe
   }
 
   return (
-    <div className="mt-8 space-y-4">
+    <div className="mt-8 space-y-4" data-testid="search-results">
       {results.map((result) => (
         <Card key={result.id}>
           <CardContent className="p-6">

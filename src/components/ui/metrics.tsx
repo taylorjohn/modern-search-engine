@@ -5,23 +5,27 @@ import { Card, CardContent } from '@/components/ui/card';
 interface MetricCardProps {
   title: string;
   value: string | number;
-  icon: React.ComponentType<any>;
+  icon: React.ElementType;
   testId?: string;
 }
 
-export const MetricCard = ({ title, value, icon: Icon, testId }: MetricCardProps) => (
-  <Card className="hover:shadow-lg transition-all duration-200">
-    <CardContent className="p-6">
-      <div className="flex justify-between items-start" data-testid={testId ? `metric-${testId}` : undefined}>
-        <div>
-          <h3 className="text-sm font-medium text-gray-500">{title}</h3>
-          <p className="text-2xl font-bold" data-testid="metric-value">{value}</p>
+export function MetricCard({ title, value, icon: Icon, testId }: MetricCardProps) {
+  return (
+    <Card data-testid={testId || `metric-${title.toLowerCase()}`}>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Icon className="h-5 w-5 text-blue-600" />
+            </div>
+            <div className="text-sm text-gray-600">{title}</div>
+          </div>
+          <div className="font-bold text-lg">{value}</div>
         </div>
-        <Icon className="h-5 w-5 text-gray-400" />
-      </div>
-    </CardContent>
-  </Card>
-);
+      </CardContent>
+    </Card>
+  );
+}
 
 interface ScoreBarProps {
   label: string;
@@ -29,18 +33,21 @@ interface ScoreBarProps {
   color?: string;
 }
 
-export const ScoreBar = ({ label, score, color = "bg-blue-600" }: ScoreBarProps) => (
-  <div className="flex items-center gap-2">
-    <span className="w-24 text-sm text-gray-600">{label}:</span>
-    <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
-      <div
-        className={`${color} h-full transition-all duration-1000 ease-out`}
-        style={{ width: `${score * 100}%` }}
-        data-testid="score-bar-fill"
-      />
+export function ScoreBar({ label, score, color = "bg-blue-500" }: ScoreBarProps) {
+  const percentage = Math.max(0, Math.min(100, score * 100));
+  
+  return (
+    <div className="w-full" data-testid={`score-bar-${label.toLowerCase().replace(/\s+/g, '-')}`}>
+      <div className="flex justify-between text-xs mb-1">
+        <span>{label}</span>
+        <span>{percentage.toFixed(1)}%</span>
+      </div>
+      <div className="w-full bg-gray-200 rounded-full h-2.5">
+        <div 
+          className={`h-2.5 rounded-full ${color}`} 
+          style={{ width: `${percentage}%` }}
+        ></div>
+      </div>
     </div>
-    <span className="w-16 text-sm text-gray-600 text-right">
-      {(score * 100).toFixed(1)}%
-    </span>
-  </div>
-);
+  );
+}

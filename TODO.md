@@ -63,7 +63,8 @@ The following items need attention to improve the codebase:
 ## Documentation
 
 1. **Code Documentation**
-   - [ ] Add JSDoc comments to service functions
+   - [x] Add JSDoc comments to service functions
+   - [x] Document component hierarchy and relationships
    - [ ] Document component props interfaces
    - [ ] Add README for each major directory
 
