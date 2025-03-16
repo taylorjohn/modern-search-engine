@@ -1,22 +1,41 @@
 // src/services/documentService.ts
-import { mockSearch, enhancedMockDocuments, type MockDocument } from '../mockData';
+import { mockSearch, enhancedMockDocuments, type MockDocument } from '@/mockData';
 
+/**
+ * Status of a document being processed
+ */
 export interface ProcessingStatus {
+  /** Filename of the document */
   filename: string;
+  /** Current processing status */
   status: 'processing' | 'complete' | 'error';
+  /** Processing progress (0-100) */
   progress?: number;
+  /** Error message if status is 'error' */
   error?: string;
 }
 
+/**
+ * Callback function for processing status updates
+ */
 interface ProcessingSubscriber {
   (updates: ProcessingStatus[]): void;
 }
 
+/**
+ * Service for document upload, processing, and search
+ * Handles file uploads, content extraction, and search functionality
+ */
 class DocumentService {
   private subscribers: ProcessingSubscriber[] = [];
   private processingDocuments: ProcessingStatus[] = [];
   private documents: MockDocument[] = [];
 
+  /**
+   * Uploads and processes a document file
+   * @param file - File object to upload and process
+   * @returns Promise that resolves when processing is complete
+   */
   async uploadDocument(file: File): Promise<void> {
     const processingStatus: ProcessingStatus = {
       filename: file.name,
@@ -80,6 +99,11 @@ class DocumentService {
     }, 2000);
   }
 
+  /**
+   * Searches for documents matching the given query
+   * @param query - Search query string
+   * @returns Promise resolving to matching documents with relevance scores
+   */
   async searchDocuments(query: string): Promise<MockDocument[]> {
     if (!query.trim()) {
       return [];
@@ -106,6 +130,11 @@ class DocumentService {
     }));
   }
 
+  /**
+   * Subscribes to document processing status updates
+   * @param callback - Function to call with status updates
+   * @returns Object with unsubscribe method
+   */
   subscribeToProcessing(callback: ProcessingSubscriber) {
     this.subscribers.push(callback);
     return {
@@ -116,10 +145,20 @@ class DocumentService {
   }
 
   // Helper methods
+  /**
+   * Notifies all subscribers with the current processing status
+   * @private
+   */
   private notifySubscribers() {
     this.subscribers.forEach(subscriber => subscriber([...this.processingDocuments]));
   }
 
+  /**
+   * Reads the content of a file as text
+   * @param file - File to read
+   * @returns Promise resolving to the file content as string
+   * @private
+   */
   private async readFileContent(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -129,6 +168,12 @@ class DocumentService {
     });
   }
 
+  /**
+   * Determines the document type based on MIME type
+   * @param mimeType - MIME type of the document
+   * @returns Document type identifier
+   * @private
+   */
   private getDocumentType(mimeType: string): 'pdf' | 'html' | 'text' | 'markdown' | 'code' {
     const types: Record<string, 'pdf' | 'html' | 'text' | 'markdown' | 'code'> = {
       'text/plain': 'text',

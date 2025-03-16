@@ -1,14 +1,29 @@
 // src/services/search.ts
-import type { SearchResult, SearchFilters, SearchStats } from '../types/search';
+import type { SearchResult, SearchFilters, SearchStats } from '@/types/search';
 
+/**
+ * Service for managing search functionality with the backend API
+ * Handles search requests, filtering, result processing, and analytics
+ */
 class SearchService {
   private baseUrl: string;
   private controller: AbortController | null = null;
 
+  /**
+   * Creates a new SearchService instance
+   * @param baseUrl - Base URL for the API (defaults to '/api')
+   */
   constructor(baseUrl: string = '/api') {
     this.baseUrl = baseUrl;
   }
 
+  /**
+   * Generic method for making API requests
+   * @param endpoint - API endpoint to request
+   * @param options - Fetch options
+   * @returns Promise resolving to the response data
+   * @private
+   */
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       ...options,
@@ -26,6 +41,9 @@ class SearchService {
     return response.json();
   }
 
+  /**
+   * Cancels any in-progress search request
+   */
   public cancelCurrentSearch() {
     if (this.controller) {
       this.controller.abort();
@@ -33,6 +51,13 @@ class SearchService {
     }
   }
 
+  /**
+   * Performs a search with the given query and filters
+   * @param query - Search query string
+   * @param filters - Optional filters to apply to the search
+   * @param options - Additional options for the request
+   * @returns Promise resolving to search results with metadata
+   */
   public async search(
     query: string,
     filters?: SearchFilters,
@@ -68,10 +93,20 @@ class SearchService {
     }
   }
 
+  /**
+   * Retrieves documents similar to the specified document
+   * @param documentId - ID of the document to find similarities for
+   * @returns Promise resolving to an array of similar search results
+   */
   public async getSimilarDocuments(documentId: string): Promise<SearchResult[]> {
     return this.request<SearchResult[]>(`/similar/${documentId}`);
   }
 
+  /**
+   * Retrieves search statistics for analytics
+   * @param timeRange - Optional date range to filter stats
+   * @returns Promise resolving to search statistics
+   */
   public async getSearchStats(timeRange?: { from: Date; to: Date }): Promise<SearchStats> {
     const params = new URLSearchParams();
     if (timeRange) {
@@ -82,6 +117,12 @@ class SearchService {
     return this.request<SearchStats>(`/stats?${params.toString()}`);
   }
 
+  /**
+   * Generates a vector embedding for the given text
+   * Used for semantic search capabilities
+   * @param text - Text to generate an embedding for
+   * @returns Promise resolving to a vector embedding (array of numbers)
+   */
   public async generateEmbedding(text: string): Promise<number[]> {
     return this.request<number[]>('/embed', {
       method: 'POST',
@@ -89,6 +130,12 @@ class SearchService {
     });
   }
 
+  /**
+   * Computes similarity between two embeddings
+   * @param embedding1 - First vector embedding
+   * @param embedding2 - Second vector embedding
+   * @returns Promise resolving to a similarity score (0-1)
+   */
   public async computeSimilarity(embedding1: number[], embedding2: number[]): Promise<number> {
     return this.request<number>('/similarity', {
       method: 'POST',
