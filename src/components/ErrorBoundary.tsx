@@ -1,8 +1,9 @@
 // src/components/ErrorBoundary.tsx
 import React, { Component, ReactNode } from 'react';
-import { logger } from '../services/logger';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
+import { logger } from '@/services/logger';
+import { errorService, ErrorType } from '@/services/errorService';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface Props {
@@ -33,12 +34,17 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
-    logger.error('Error caught by boundary', {
-      error: error.message,
-      stack: error.stack,
-      componentStack: errorInfo.componentStack
+    // Handle the error with our error service
+    errorService.handleError({
+      type: ErrorType.UNEXPECTED,
+      message: `Component Error: ${error.message}`,
+      details: {
+        componentStack: errorInfo.componentStack
+      },
+      originalError: error
     });
 
+    // Call onError prop if provided
     this.props.onError?.(error, errorInfo);
   }
 

@@ -1,12 +1,14 @@
 // src/hooks/useSearch.ts
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { searchService } from '../services/search';
-import { searchHistoryService } from '../services/searchHistory';
-import { cacheService } from '../services/cache';
-import { logger } from '../services/logger';
+import { searchService } from '@/services/search';
+import { searchHistoryService } from '@/services/searchHistory';
+import { cacheService } from '@/services/cache';
+import { logger } from '@/services/logger';
+import { errorService, ErrorType, AppError } from '@/services/errorService';
 import { useSearchPerformance } from './usePerformance';
-import type { SearchResult, SearchFilters } from '../types/search';
-import { debounce } from '../lib/utils';
+import { useError } from '@/contexts/ErrorContext';
+import type { SearchResult, SearchFilters } from '@/types/search';
+import { debounce } from '@/lib/utils';
 
 interface UseSearchOptions {
   debounceMs?: number;
@@ -27,7 +29,8 @@ export function useSearch({
     authors: []
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<AppError | null>(null);
+  const { handleError } = useError();
   const [stats, setStats] = useState({
     totalResults: 0,
     executionTime: 0
@@ -96,10 +99,21 @@ export function useSearch({
         searchFilters
       );
     } catch (err) {
-      if (err instanceof Error && err.name !== 'AbortError') {
-        setError(err);
-        logger.error('Search failed', { error: err, query: searchQuery });
+      if (err?.type === ErrorType.SEARCH && err?.message === 'Search cancelled') {
+        // Ignore search cancellations
+        return;
       }
+      
+      // Create a proper app error
+      const appError = errorService.handleError(err, ErrorType.SEARCH);
+      
+      // Update the local error state
+      setError(appError);
+      
+      // Propagate to the global error handler
+      handleError(appError);
+      
+      logger.error('Search failed', { error: appError, query: searchQuery });
     } finally {
       setLoading(false);
     }

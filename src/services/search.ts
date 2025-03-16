@@ -1,5 +1,6 @@
 // src/services/search.ts
 import type { SearchResult, SearchFilters, SearchStats } from '@/types/search';
+import { errorService, ErrorType } from '@/services/errorService';
 
 /**
  * Service for managing search functionality with the backend API
@@ -87,9 +88,15 @@ class SearchService {
       return { ...response, executionTime };
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Search cancelled');
+        throw { 
+          type: ErrorType.SEARCH, 
+          message: 'Search cancelled',
+          originalError: error
+        };
       }
-      throw error;
+      
+      // Use the error service to standardize errors
+      throw errorService.handleError(error, ErrorType.SEARCH);
     }
   }
 

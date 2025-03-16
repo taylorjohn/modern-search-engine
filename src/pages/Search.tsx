@@ -1,10 +1,13 @@
-import React, { useState, useCallback } from 'react';
-import { Clock, Hash, BarChart2, Zap } from 'lucide-react';
+import React, { useState, useCallback, useRef } from 'react';
+import { Clock, Hash, BarChart2, Zap, Keyboard } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { MetricCard } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { MetricCard, Toast } from '@/components/ui';
 import { DocumentUpload, ProcessingStatus } from '@/components/document';
 import { SearchBar, SearchResultList, SearchHistory } from '@/components/search';
 import { searchService } from '@/services';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useError } from '@/contexts/ErrorContext';
 import { SearchResult as BaseSearchResult } from '@/types/search';
 
 // Local extension of SearchResult for UI purposes
@@ -44,6 +47,9 @@ export default function Search() {
     score: '0%',
     mode: 'text',
   });
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const { handleError } = useError();
 
   const handleSearch = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) {
@@ -134,6 +140,35 @@ export default function Search() {
     handleSearch(selectedQuery);
   };
 
+  // Setup keyboard shortcuts
+  useKeyboardShortcuts(
+    {
+      '/': () => {
+        if (searchInputRef.current) {
+          searchInputRef.current.focus();
+        }
+      },
+      'escape': () => {
+        setQuery('');
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+      },
+      's': () => {
+        if (query.trim()) {
+          handleSearch(query);
+        }
+      },
+      'h': () => {
+        setShowKeyboardShortcuts(prev => !prev);
+      },
+      'k': () => {
+        setShowKeyboardShortcuts(prev => !prev);
+      }
+    },
+    { onlyWhenFocused: true }
+  );
+
   const statsData = [
     { title: 'Time', value: stats.time, icon: Clock, testId: 'time' },
     { title: 'Results', value: stats.results, icon: Hash, testId: 'results' },
@@ -143,8 +178,21 @@ export default function Search() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold mb-2">Modern Search Engine</h1>
-      <p className="text-gray-600">Upload documents to start searching through their content</p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-4xl font-bold mb-2">Modern Search Engine</h1>
+          <p className="text-gray-600">Upload documents to start searching through their content</p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowKeyboardShortcuts(true)}
+          className="flex items-center gap-2"
+        >
+          <Keyboard className="h-4 w-4" />
+          <span>Keyboard Shortcuts</span>
+        </Button>
+      </div>
 
       <div className="mt-8">
         <SearchBar
@@ -155,6 +203,23 @@ export default function Search() {
           placeholder="Search documents..."
         />
       </div>
+      
+      {/* Keyboard shortcuts toast */}
+      {showKeyboardShortcuts && (
+        <Toast
+          message={`
+            Keyboard Shortcuts:
+            / - Focus search
+            Esc - Clear search
+            S - Execute search
+            H or K - Show/hide shortcuts
+          `}
+          type="info"
+          onClose={() => setShowKeyboardShortcuts(false)}
+          autoClose={true}
+          duration={5000}
+        />
+      )}
 
       <div className="mt-8">
         <Card>

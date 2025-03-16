@@ -9,6 +9,7 @@ export * from './performanceMonitor';
 export * from './logger';
 export * from './cache';
 export * from './mockApi';
+export * from './errorService';
 
 // Handle potential duplicate exports by using explicit imports and re-exports
 import { searchService as search } from './search';
