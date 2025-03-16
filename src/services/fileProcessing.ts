@@ -1,74 +1,77 @@
-export interface ProcessedDocument {
-  id: string;
-  content: string;
-  metadata: {
-    filename: string;
-    words: number;
-    type: string;
-    created: Date;
-  };
+// src/services/fileProcessing.ts
+export interface ProcessingResult {
+  content?: string;
+  processed: boolean;
+  size?: number;
+  type: string;
+  name: string;
 }
 
-let processedDocuments: ProcessedDocument[] = [];
+export async function processFile(
+  file: File,
+  onProgress?: (progress: number) => void
+): Promise<ProcessingResult> {
+  // Default progress handler if none provided
+  const handleProgress = onProgress || (() => {});
 
-export const processFile = async (
-  file: File, 
-  onProgress: (progress: number) => void
-): Promise<ProcessedDocument> => {
-  return new Promise<ProcessedDocument>((resolve, reject) => {
+  return new Promise((resolve, reject) => {
+    // Check for empty file
+    if (file.size === 0) {
+      handleProgress(100);
+      resolve({
+        content: '',
+        processed: true,
+        size: 0,
+        type: file.type,
+        name: file.name
+      });
+      return;
+    }
+
+    // Validate file type
+    const supportedTypes = ['text/plain', 'application/pdf'];
+    if (!supportedTypes.includes(file.type)) {
+      reject(new Error('Unsupported file type'));
+      return;
+    }
+
     const reader = new FileReader();
-    
+
     reader.onload = async (e) => {
       try {
-        const content = e.target?.result?.toString() || '';
-        
-        // Simulate processing time with progress
-        for (let i = 0; i <= 100; i += 10) {
-          onProgress(i);
-          await new Promise(r => setTimeout(r, 100));
+        // Simulate processing delay with progress updates
+        for (let progress = 0; progress <= 100; progress += 20) {
+          handleProgress(progress);
+          await new Promise(r => setTimeout(r, 50));
         }
 
-        const doc: ProcessedDocument = {
-          id: Math.random().toString(36).substring(7),
+        const result = e.target?.result;
+        let content: string | undefined;
+        
+        if (typeof result === 'string') {
+          content = result;
+        }
+        
+        resolve({
           content,
-          metadata: {
-            filename: file.name,
-            words: content.split(/\s+/).filter(Boolean).length,
-            type: file.type || 'text/plain',
-            created: new Date()
-          }
-        };
-
-        processedDocuments.push(doc);
-        resolve(doc);
+          processed: true,
+          size: file.size,
+          type: file.type,
+          name: file.name
+        });
       } catch (error) {
         reject(error);
       }
     };
 
-    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.onerror = () => {
+      reject(new Error('Failed to read file'));
+    };
 
-    reader.readAsText(file);
+    if (file.type === 'application/pdf') {
+      reader.readAsArrayBuffer(file);
+    } else {
+      reader.readAsText(file);
+    }
   });
-};
-
-export const searchDocuments = (query: string): ProcessedDocument[] => {
-  if (!query?.trim()) return [];
-  
-  const searchTerms = query.toLowerCase().split(/\s+/);
-  
-  return processedDocuments.filter(doc => 
-    searchTerms.some(term => 
-      doc.content.toLowerCase().includes(term) ||
-      doc.metadata.filename.toLowerCase().includes(term)
-    )
-  );
-};
-
-export const getProcessedDocuments = (): ProcessedDocument[] => {
-  return [...processedDocuments];
-};
-
-export const clearProcessedDocuments = (): void => {
-  processedDocuments = [];
-};
+}

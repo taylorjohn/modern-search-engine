@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Upload as UploadIcon, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
-import DocumentUpload from './DocumentUpload';
+import { DocumentUpload } from '@/components/document';
 
 interface ProcessingStatus {
   id: string;

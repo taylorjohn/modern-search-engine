@@ -1,4 +1,3 @@
-// src/components/document/DocumentUpload.tsx
 import React from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload } from 'lucide-react';
@@ -26,7 +25,7 @@ const DocumentUpload: React.FC<Props> = ({
     onDrop: handleDrop,
     accept: {
       'application/pdf': ['.pdf'],
-      'text/plain': ['.txt']
+      'text/plain': ['.txt'],
     },
     maxSize,
     multiple,
@@ -74,4 +73,4 @@ const DocumentUpload: React.FC<Props> = ({
   );
 };
 
-export default DocumentUpload;
+export default DocumentUpload; // Ensure default export

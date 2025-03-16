@@ -10,8 +10,9 @@ The following items need attention to improve the codebase:
    - [x] Fix imports in redundant Search.tsx component file
    - [x] Extract reusable components (MetricCard, ScoreBar)
    - [x] Create proper SearchResultList component
-   - [ ] Remove redundant DocumentUpload.tsx in root components directory
-   - [ ] Remove redundant Search.tsx component files
+   - [x] Remove redundant DocumentUpload.tsx in root components directory
+   - [x] Remove redundant Search.tsx component files
+   - [x] Fix misnamed SearchResults.tsx (moved to AdvancedDocumentUpload.tsx)
    - [x] Consolidate search functionality in search/ directory
 
 2. **Standardize Imports**
@@ -22,7 +23,7 @@ The following items need attention to improve the codebase:
    - [ ] Replace remaining relative imports with absolute imports using '@'
 
 3. **Clean Up Unused Files**
-   - [ ] Remove *_old.tsx files
+   - [x] Remove *_old.tsx files
    - [ ] Remove redundant test files
    - [ ] Clean up legacy files in ui/ directory that are now in src/
 
