@@ -79,7 +79,6 @@ export default function Upload() {
         <CardContent>
           <DocumentUpload
             onFilesSelected={handleFilesSelected}
-            accept="application/pdf,text/html,text/plain"
             maxSize={10 * 1024 * 1024} // 10MB
             multiple={true}
           />

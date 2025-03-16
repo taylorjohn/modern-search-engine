@@ -26,7 +26,8 @@ The following items need attention to improve the codebase:
    - [x] Remove *_old.tsx files
    - [x] Update imports in test files to use '@/' pattern
    - [ ] Remove redundant test files
-   - [ ] Clean up legacy files in ui/ directory that are now in src/
+   - [x] Import useful components from ui/ directory into src/
+   - [ ] Clean up legacy files in ui/ directory when no longer needed
 
 ## Feature Improvements
 
@@ -80,7 +81,8 @@ The following items need attention to improve the codebase:
 
 2. **Code Quality**
    - [ ] Set up consistent linting rules
-   - [ ] Address TypeScript warnings
+   - [x] Address TypeScript errors in barrel exports
+   - [ ] Address remaining TypeScript warnings
    - [ ] Improve error handling
 
 3. **Build Process**

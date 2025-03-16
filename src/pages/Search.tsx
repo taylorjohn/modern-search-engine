@@ -64,7 +64,7 @@ export default function Search() {
         id: result.id,
         title: result.title,
         content: result.content,
-        documentType: result.metadata?.type || 'Document',
+        documentType: (result as any).metadata?.type || 'Document',
         scores: {
           vectorScore: result.score ? result.score * 0.8 : 0,
           finalScore: result.score || 0
@@ -72,7 +72,7 @@ export default function Search() {
         metadata: {
           created: Date.now(),
           wordCount: result.content.split(/\s+/).length,
-          type: result.metadata?.type || 'Text'
+          type: (result as any).metadata?.type || 'Text'
         },
         score: result.score
       }));
