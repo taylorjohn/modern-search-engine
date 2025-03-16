@@ -98,12 +98,35 @@ cargo run
    - `S` - Execute search
    - `F` - Toggle filters
    - `K` - Show/hide keyboard shortcuts
+4. Use the filter chips to quickly see and remove active filters
+5. Hover over metrics cards to see more detailed information
 
 ### Document Upload
 1. Use the document upload area to add files to the search index
 2. Supported formats: PDF, TXT, DOCX, HTML
 3. Monitor processing status in real-time
 4. Once processing is complete, documents become searchable
+
+## Testing
+
+The project includes comprehensive tests for all major components:
+
+### Running Tests
+```bash
+# Run all tests
+npm test
+
+# Run specific tests
+npm test -- --run src/__tests__/unit/responsive-search.test.tsx
+
+# Run tests with coverage
+npm test -- --coverage
+```
+
+### Test Structure
+- Unit tests for components in `__tests__/unit/`
+- Service tests in `__tests__/services/`
+- Integration tests in `__tests__/integration/`
 
 ## Project Structure
 

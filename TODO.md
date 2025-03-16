@@ -65,8 +65,9 @@ The following items need attention to improve the codebase:
    - [x] Add tests for search functionality
    - [x] Add basic tests for responsive UI
    - [x] Add integration tests for search and upload flows
-   - [ ] Add tests for new search filters functionality
-   - [ ] Add tests for new ResponsiveSearch component
+   - [x] Add tests for new ResponsiveSearch component
+   - [x] Add tests for search filters functionality
+   - [x] Add tests for error handling in search components
    - [ ] Fix flaky tests in search.test.tsx
    - [ ] Fix TypeScript errors in test files
 
