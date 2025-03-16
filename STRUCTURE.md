@@ -37,19 +37,27 @@ modern-search-engine/
 
 ### Search Components
 
-- `SearchBar.tsx` - Search input with autocomplete
-- `SearchResults.tsx` - Displays search results
-- `SearchFilters.tsx` - Provides filtering options
-- `SearchHistory.tsx` - Manages search history
-- `SearchAnalytics.tsx` - Displays search metrics
+- `SearchBar.tsx` - Search input with autocomplete, supporting keyboard shortcuts and ref forwarding
+- `SearchResultList.tsx` - Displays search results with expandable details
+- `ResponsiveSearch.tsx` - Responsive search interface with filtering and advanced features
+- `SearchFilters.tsx` - Provides filtering options for search results
+- `SearchHistory.tsx` - Manages and displays search history
+- `SearchAnalytics.tsx` - Displays performance metrics about search operations
+- `SearchHistoryManager.tsx` - Handles search history persistence
 
 ### Services
 
-- `fileProcessing.ts` - Processes uploaded files
-- `searchService.ts` - Manages search functionality
-- `documentService.ts` - Handles document operations
-- `searchHistory.ts` - Manages search history
-- `api.ts` - API client for backend communication
+- `api.ts` - Core API client with request management, retries, and error handling
+- `search.ts` - Original search service implementation
+- `searchService.ts` - New search service with highlighting and improved parsing
+- `fileProcessing.ts` - Processes uploaded files and handles file conversions
+- `documentService.ts` - Handles document operations and metadata extraction
+- `searchHistory.ts` - Manages search history, persistence, and retrieval
+- `errorService.ts` - Centralized error handling and standardization
+- `cache.ts` - Caching service for search results and assets
+- `analytics.ts` - Collects and reports usage metrics
+- `logger.ts` - Universal logging service with multiple log levels
+- `websocket.ts` - Real-time communication for document status updates
 
 ## Test Structure
 
@@ -106,9 +114,31 @@ modern-search-engine/
   - `utils/`: Utility functions
   - `__tests__/`: Test files
 
+### Hooks
+
+- `useSearch.ts` - Main search hook with comprehensive search functionality
+- `useSearchAPI.ts` - API-focused search hook with debouncing and error handling
+- `useDebounce.ts` - Debounce hook for UI interactions and API calls
+- `useKeyboardShortcuts.ts` - Hook for registering and handling keyboard shortcuts
+- `useDocumentUpload.ts` - Hook for handling document uploads
+- `usePerformance.ts` - Hook for tracking and reporting performance metrics
+- `useGitChanges.ts` - Hook for monitoring repository changes during development
+
+## UI Components
+
+- `button.tsx` - Reusable button component with various styles
+- `card.tsx` - Card container with various usage patterns
+- `input.tsx` - Input components with accessibility features
+- `metrics.tsx` - Metric display components with tooltips
+- `toast.tsx` - Toast notification system for feedback
+- `sheet.tsx` - Slide-in panel component for mobile interfaces
+
 ## Next Steps
 
-1. Continue cleaning up duplicate files in ui/ directory
-2. Fix remaining TypeScript errors in test files
-3. Implement proper API integration with the Rust backend
-4. Add more comprehensive documentation
+1. Implement full search history in the responsive UI
+2. Add pagination for large result sets
+3. Optimize mobile experience with touch interactions
+4. Continue cleaning up duplicate files in ui/ directory
+5. Fix remaining TypeScript errors in test files
+6. Add comprehensive tests for the responsive search components
+7. Add automated visual regression testing
