@@ -1,6 +1,6 @@
 // src/contexts/SearchContext.tsx
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import { SearchResult, SearchAnalytics, SearchFilters, SearchOptions } from '../types';
+import { SearchResult, SearchAnalytics, SearchFilters, SearchOptions } from '@/types';
 
 interface SearchState {
   query: string;

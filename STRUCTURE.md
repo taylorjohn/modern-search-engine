@@ -87,3 +87,28 @@ modern-search-engine/
   - Functions: camelCase
 - Prefer functional components with hooks over class components
 - Use async/await for asynchronous code
+
+## Organization Guidelines
+
+- Keep each component in its own file
+- Use barrel exports (index.ts) for each directory
+- Group related components in subdirectories
+- Use absolute imports with '@/' prefix
+- Put reusable UI components in the `ui/` directory
+- Keep page components separate from UI components
+- Follow a consistent directory structure:
+  - `components/`: Reusable React components
+  - `pages/`: Top-level page components
+  - `services/`: Business logic and API calls
+  - `hooks/`: Reusable React hooks
+  - `contexts/`: React context providers
+  - `types/`: TypeScript interfaces and types
+  - `utils/`: Utility functions
+  - `__tests__/`: Test files
+
+## Next Steps
+
+1. Continue cleaning up duplicate files in ui/ directory
+2. Fix remaining TypeScript errors in test files
+3. Implement proper API integration with the Rust backend
+4. Add more comprehensive documentation

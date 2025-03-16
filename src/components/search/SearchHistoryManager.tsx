@@ -9,8 +9,8 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Card, CardContent } from '@/components/ui/card';
-import { searchHistoryService } from '../../services/searchHistory';
-import type { SearchHistoryItem } from '../../types/search';
+import { searchHistoryService } from '@/services/searchHistory';
+import type { SearchHistoryItem } from '@/types/search';
 
 interface Props {
   history: SearchHistoryItem[];

@@ -1,6 +1,6 @@
 // src/components/git/GitChangesMonitor.tsx
 import React from 'react';
-import { useGitChanges } from '../../hooks/useGitChanges';
+import { useGitChanges } from '@/hooks/useGitChanges';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 function GitMonitor() {

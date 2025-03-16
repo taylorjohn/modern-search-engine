@@ -1,6 +1,6 @@
 // src/__tests__/services/searchHistory.test.ts
 import { describe, it, expect, beforeEach } from 'vitest';
-import { searchHistoryService } from '../../services/searchHistory';
+import { searchHistoryService } from '@/services';
 
 describe('SearchHistoryService', () => {
   beforeEach(() => {

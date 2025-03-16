@@ -1,7 +1,7 @@
 // src/__tests__/unit/document-upload.test.tsx
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import DocumentUpload from '../../components/document/DocumentUpload';
+import { DocumentUpload } from '@/components/document';
 
 // Store the onDrop callback to call it directly
 let dropCallback: ((acceptedFiles: File[]) => void) | null = null;

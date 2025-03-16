@@ -20,10 +20,11 @@ The following items need attention to improve the codebase:
    - [x] Update imports in test files
    - [x] Use barrel exports for components and services
    - [x] Fix all unit and integration tests
-   - [ ] Replace remaining relative imports with absolute imports using '@'
+   - [x] Replace remaining relative imports with absolute imports using '@'
 
 3. **Clean Up Unused Files**
    - [x] Remove *_old.tsx files
+   - [x] Update imports in test files to use '@/' pattern
    - [ ] Remove redundant test files
    - [ ] Clean up legacy files in ui/ directory that are now in src/
 
@@ -50,11 +51,13 @@ The following items need attention to improve the codebase:
    - [ ] Add tests for searchService.ts
    - [ ] Add more integration tests for search and upload flows
    - [ ] Fix flaky tests in search.test.tsx
+   - [ ] Fix TypeScript errors in test files
 
 2. **Test Infrastructure**
    - [ ] Set up more robust mock services
    - [ ] Add test utilities for common operations
    - [ ] Configure proper test timeouts
+   - [ ] Standardize test mocks and configuration
 
 ## Documentation
 

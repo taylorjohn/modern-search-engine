@@ -1,7 +1,7 @@
 // src/hooks/usePerformance.ts
 import { useEffect, useRef, useCallback } from 'react';
-import { performanceMonitor } from '../services/performanceMonitor';
-import { logger } from '../services/logger';
+import { performanceMonitor } from '@/services/performanceMonitor';
+import { logger } from '@/services/logger';
 
 interface UsePerformanceOptions {
   name: string;
@@ -101,7 +101,7 @@ export function withPerformanceTracking<P extends object>(
   WrappedComponent: React.ComponentType<P>,
   componentName: string
 ) {
-  return function PerformanceTrackedComponent(props: P) {
+  const PerformanceTrackedComponent = (props: P) => {
     const { startMeasure, endMeasure } = useComponentPerformance(componentName);
 
     useEffect(() => {
@@ -109,6 +109,8 @@ export function withPerformanceTracking<P extends object>(
       return () => endMeasure();
     }, [startMeasure, endMeasure]);
 
-    return <WrappedComponent {...props} />;
+    return React.createElement(WrappedComponent, props);
   };
+  
+  return PerformanceTrackedComponent;
 }
