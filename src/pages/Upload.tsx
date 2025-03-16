@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Upload as UploadIcon } from 'lucide-react';
-import { documentService } from '../services/documentService';
+import { documentService } from '@/services';
 
 export default function Upload() {
   const navigate = useNavigate();

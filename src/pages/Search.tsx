@@ -5,11 +5,10 @@ import { MetricCard } from '@/components/ui';
 import { DocumentUpload, ProcessingStatus } from '@/components/document';
 import { SearchBar, SearchResultList, SearchHistory } from '@/components/search';
 import { searchService } from '@/services';
+import { SearchResult as BaseSearchResult } from '@/types/search';
 
-interface SearchResult {
-  id: string;
-  title: string;
-  content: string;
+// Local extension of SearchResult for UI purposes
+interface SearchResult extends Omit<BaseSearchResult, 'scores' | 'metadata' | 'url' | 'tags'> {
   documentType: string;
   scores: {
     vectorScore: number;
@@ -20,6 +19,7 @@ interface SearchResult {
     wordCount: number;
     type: string;
   };
+  score?: number; // For compatibility with search service
 }
 
 interface SearchHistoryItem {
@@ -56,22 +56,40 @@ export default function Search() {
 
     try {
       // This would normally call an API, but for now we're using the local service
-      const searchResults = searchService.search(searchQuery);
+      const apiResults = searchService.search(searchQuery);
       const endTime = performance.now();
 
-      setResults(searchResults);
+      // Transform results to match our UI-specific format
+      const transformedResults: SearchResult[] = apiResults.map(result => ({
+        id: result.id,
+        title: result.title,
+        content: result.content,
+        documentType: result.metadata?.type || 'Document',
+        scores: {
+          vectorScore: result.score ? result.score * 0.8 : 0,
+          finalScore: result.score || 0
+        },
+        metadata: {
+          created: Date.now(),
+          wordCount: result.content.split(/\s+/).length,
+          type: result.metadata?.type || 'Text'
+        },
+        score: result.score
+      }));
+
+      setResults(transformedResults);
       
       setStats({
         time: `${Math.round(endTime - startTime)}ms`,
-        results: searchResults.length,
-        score: searchResults.length > 0 
-          ? `${Math.max(...searchResults.map(r => r.score * 100)).toFixed(1)}%`
+        results: transformedResults.length,
+        score: transformedResults.length > 0 
+          ? `${Math.max(...transformedResults.map(r => (r.scores.finalScore * 100))).toFixed(1)}%`
           : '0%',
         mode: 'text',
       });
       
       setSearchHistory(prev => [
-        { query: searchQuery, results: searchResults.length },
+        { query: searchQuery, results: transformedResults.length },
         ...prev.filter(item => item.query !== searchQuery).slice(0, 4)
       ]);
     } catch (error) {
@@ -143,8 +161,8 @@ export default function Search() {
           <CardContent className="p-4">
             <DocumentUpload
               onFilesSelected={handleFilesSelected}
-              accept="application/pdf,text/plain"
               maxSize={10485760}
+              multiple={true}
             />
           </CardContent>
         </Card>
@@ -185,19 +203,7 @@ export default function Search() {
       </div>
 
       <SearchResultList
-        results={results.map(result => ({
-          ...result,
-          documentType: 'Document',
-          scores: {
-            vectorScore: result.score * 0.8,
-            finalScore: result.score
-          },
-          metadata: {
-            created: Date.now(),
-            wordCount: result.content.split(/\s+/).length,
-            type: 'Text'
-          }
-        }))}
+        results={results}
         isLoading={isLoading}
         query={query}
       />
