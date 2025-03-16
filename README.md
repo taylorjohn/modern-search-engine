@@ -1,43 +1,72 @@
-# Advanced Search Engine
+# Modern Search Engine
 
-A Rust-based search engine with transparent scoring and real-time results visualization.
+A powerful search engine with a responsive UI, transparent scoring, and real-time results visualization.
 
 ## Features
 
-- Full-text search with Tantivy
-- Real-time search results
+- Full-text search with Tantivy backend
+- Vector search capabilities
+- Real-time search results with debouncing
 - Transparent scoring visualization
-- Processing steps timing
-- Semantic analysis
-- Query expansion
-- Spell checking
-- Modern web interface
+- Keyboard shortcuts
+- Responsive design
+- Document uploading and processing
+- Search history tracking
+- Advanced filters
 
 ## Tech Stack
 
 - Backend:
   - Rust
-  - Warp (Web framework)
+  - Axum (Web framework)
   - Tantivy (Search engine)
   - Tokio (Async runtime)
+  - PostgreSQL with pgvector
 - Frontend:
-  - HTML5
-  - CSS3
-  - JavaScript
+  - React
+  - TypeScript
+  - TailwindCSS
+  - Vite
 
 ## Getting Started
 
 ### Prerequisites
 
+- Node.js (v16+)
+- npm (v8+)
 - Rust (latest stable version)
-- Cargo
+- PostgreSQL (for backend database)
 
-### Installation
+### Frontend Installation
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/search-engine.git
-cd search-engine
+git clone https://github.com/yourusername/modern-search-engine.git
+cd modern-search-engine
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Set up environment variables:
+```bash
+cp .env.example .env
+```
+
+4. Start the development server:
+```bash
+npm run dev
+```
+
+5. Open your browser and navigate to http://localhost:5173
+
+### Backend Installation (Rust)
+
+1. Navigate to the backend directory:
+```bash
+cd backend
 ```
 
 2. Build the project:
@@ -50,14 +79,31 @@ cargo build
 cargo run
 ```
 
-4. Open your browser and navigate to the URL shown in the console (typically http://127.0.0.1:3030)
+4. The API will be available at http://localhost:3030
 
 ## Usage
 
+### Basic Search
 1. Enter your search query in the search box
-2. Results will appear in real-time
+2. Results will appear in real-time with debouncing
 3. View processing steps and timing information
-4. See scoring breakdown for each result
+4. See scoring breakdown for each result by expanding result cards
+
+### Responsive UI
+1. Toggle between classic and responsive views using the button in the top-right corner
+2. On mobile devices, use the filter button to show/hide search filters
+3. Use keyboard shortcuts for faster navigation:
+   - `/` - Focus search
+   - `Esc` - Clear search
+   - `S` - Execute search
+   - `F` - Toggle filters
+   - `K` - Show/hide keyboard shortcuts
+
+### Document Upload
+1. Use the document upload area to add files to the search index
+2. Supported formats: PDF, TXT, DOCX, HTML
+3. Monitor processing status in real-time
+4. Once processing is complete, documents become searchable
 
 ## Project Structure
 

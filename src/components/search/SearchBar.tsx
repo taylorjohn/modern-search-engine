@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, forwardRef } from 'react';
 import { Search, Loader2, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,23 +9,27 @@ interface SearchBarProps {
   onSearch: () => void;
   isLoading?: boolean;
   placeholder?: string;
+  className?: string;
 }
 
-export default function SearchBar({ 
+const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({
   value, 
   onChange, 
   onSearch, 
   isLoading = false,
-  placeholder = 'Search documents...'
-}: SearchBarProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  placeholder = 'Search documents...',
+  className = ''
+}, ref) => {
+  // Use internal ref if no external ref is provided
+  const internalRef = useRef<HTMLInputElement>(null);
+  const resolvedRef = (ref as React.RefObject<HTMLInputElement>) || internalRef;
   
-  // Focus input on mount
+  // Focus input on mount if no external ref is provided
   useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
+    if (!ref && internalRef.current) {
+      internalRef.current.focus();
     }
-  }, []);
+  }, [ref]);
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,8 +38,8 @@ export default function SearchBar({
   
   const handleClear = () => {
     onChange('');
-    if (inputRef.current) {
-      inputRef.current.focus();
+    if (resolvedRef.current) {
+      resolvedRef.current.focus();
     }
   };
 
@@ -45,7 +49,7 @@ export default function SearchBar({
         <label htmlFor="search-input" className="sr-only">Search documents</label>
         <Input
           id="search-input"
-          ref={inputRef}
+          ref={resolvedRef}
           type="search"
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -97,4 +101,8 @@ export default function SearchBar({
       </Button>
     </form>
   );
-}
+});
+
+SearchBar.displayName = 'SearchBar';
+
+export default SearchBar;

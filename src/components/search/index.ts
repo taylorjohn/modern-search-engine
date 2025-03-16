@@ -7,3 +7,4 @@ export { default as SearchAnalytics } from './SearchAnalytics';
 export { default as SearchInput } from './SearchInput';
 export { default as SearchHistoryManager } from './SearchHistoryManager';
 export { default as SearchResultComparison } from './SearchResultComparison';
+export { default as ResponsiveSearch } from './ResponsiveSearch';

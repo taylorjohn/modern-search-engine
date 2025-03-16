@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import Search from '../../pages/Search';
+import React from 'react';
 
 // Mock document component
 vi.mock('@/components/document', () => ({
@@ -35,6 +36,16 @@ vi.mock('@/services', () => ({
   searchService: {
     search: vi.fn().mockImplementation(() => [])
   }
+}));
+
+// Mock Error Context
+vi.mock('@/contexts/ErrorContext', () => ({
+  useError: () => ({
+    handleError: vi.fn(),
+    clearError: vi.fn(),
+    error: null,
+  }),
+  ErrorProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>
 }));
 
 describe('Document Upload Flow', () => {

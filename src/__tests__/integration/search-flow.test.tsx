@@ -2,6 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, act, fireEvent } from '@testing-library/react';
 import Search from '../../pages/Search';
+import React from 'react';
 
 // Mock document components
 vi.mock('@/components/document', () => ({
@@ -53,6 +54,16 @@ vi.mock('@/services', () => ({
   }
 }));
 
+// Mock Error Context
+vi.mock('@/contexts/ErrorContext', () => ({
+  useError: () => ({
+    handleError: vi.fn(),
+    clearError: vi.fn(),
+    error: null,
+  }),
+  ErrorProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>
+}));
+
 describe('Search Flow Integration', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -87,7 +98,7 @@ describe('Search Flow Integration', () => {
       fireEvent.change(searchInput, { target: { value: 'test query' } });
     });
 
-    // Check that the search metrics update
-    expect(screen.getByTestId('metric-results')).toBeInTheDocument();
+    // Check that the search results are shown
+    expect(screen.getByTestId('search-results')).toBeInTheDocument();
   });
 });

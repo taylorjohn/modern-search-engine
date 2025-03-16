@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MetricCard, Toast } from '@/components/ui';
 import { DocumentUpload, ProcessingStatus } from '@/components/document';
-import { SearchBar, SearchResultList, SearchHistory } from '@/components/search';
+import { SearchBar, SearchResultList, SearchHistory, ResponsiveSearch } from '@/components/search';
 import { searchService } from '@/services';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useError } from '@/contexts/ErrorContext';
@@ -48,6 +48,7 @@ export default function Search() {
     mode: 'text',
   });
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+  const [useResponsiveUI, setUseResponsiveUI] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { handleError } = useError();
 
@@ -183,27 +184,27 @@ export default function Search() {
           <h1 className="text-4xl font-bold mb-2">Modern Search Engine</h1>
           <p className="text-gray-600">Upload documents to start searching through their content</p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowKeyboardShortcuts(true)}
-          className="flex items-center gap-2"
-        >
-          <Keyboard className="h-4 w-4" />
-          <span>Keyboard Shortcuts</span>
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant={useResponsiveUI ? "default" : "outline"}
+            size="sm"
+            onClick={() => setUseResponsiveUI(!useResponsiveUI)}
+            className="flex items-center gap-2"
+          >
+            <span>{useResponsiveUI ? "Classic View" : "Responsive View"}</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowKeyboardShortcuts(true)}
+            className="flex items-center gap-2"
+          >
+            <Keyboard className="h-4 w-4" />
+            <span>Keyboard Shortcuts</span>
+          </Button>
+        </div>
       </div>
 
-      <div className="mt-8">
-        <SearchBar
-          value={query}
-          onChange={handleSearchChange}
-          onSearch={() => handleSearch(query)}
-          isLoading={isLoading}
-          placeholder="Search documents..."
-        />
-      </div>
-      
       {/* Keyboard shortcuts toast */}
       {showKeyboardShortcuts && (
         <Toast
@@ -221,57 +222,78 @@ export default function Search() {
         />
       )}
 
-      <div className="mt-8">
-        <Card>
-          <CardContent className="p-4">
-            <DocumentUpload
-              onFilesSelected={handleFilesSelected}
-              maxSize={10485760}
-              multiple={true}
+      {useResponsiveUI ? (
+        // Responsive UI
+        <div className="mt-8">
+          <ResponsiveSearch />
+        </div>
+      ) : (
+        // Classic UI
+        <>
+          <div className="mt-8">
+            <SearchBar
+              value={query}
+              onChange={handleSearchChange}
+              onSearch={() => handleSearch(query)}
+              isLoading={isLoading}
+              placeholder="Search documents..."
+              ref={searchInputRef}
             />
-          </CardContent>
-        </Card>
-      </div>
+          </div>
 
-      {processingStatus.status !== 'pending' && (
-        <div className="mt-6">
-          <ProcessingStatus
-            status={{
-              id: processingStatus.id,
-              status: processingStatus.status,
-              progress: processingStatus.progress,
-              message: processingStatus.message,
-            }}
+          <div className="mt-8">
+            <Card>
+              <CardContent className="p-4">
+                <DocumentUpload
+                  onFilesSelected={handleFilesSelected}
+                  maxSize={10485760}
+                  multiple={true}
+                />
+              </CardContent>
+            </Card>
+          </div>
+
+          {processingStatus.status !== 'pending' && (
+            <div className="mt-6">
+              <ProcessingStatus
+                status={{
+                  id: processingStatus.id,
+                  status: processingStatus.status,
+                  progress: processingStatus.progress,
+                  message: processingStatus.message,
+                }}
+              />
+            </div>
+          )}
+
+          {searchHistory.length > 0 && (
+            <div className="mt-6">
+              <SearchHistory
+                history={searchHistory}
+                onSelect={handleHistorySelect}
+              />
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+            {statsData.map(({ title, value, icon, testId }) => (
+              <MetricCard
+                key={title}
+                title={title}
+                value={value}
+                icon={icon}
+                testId={testId}
+              />
+            ))}
+          </div>
+
+          <SearchResultList
+            results={results}
+            isLoading={isLoading}
+            query={query}
           />
-        </div>
+        </>
       )}
-
-      {searchHistory.length > 0 && (
-        <div className="mt-6">
-          <SearchHistory
-            history={searchHistory}
-            onSelect={handleHistorySelect}
-          />
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-        {statsData.map(({ title, value, icon, testId }) => (
-          <MetricCard
-            key={title}
-            title={title}
-            value={value}
-            icon={icon}
-            testId={testId}
-          />
-        ))}
-      </div>
-
-      <SearchResultList
-        results={results}
-        isLoading={isLoading}
-        query={query}
-      />
     </div>
   );
 }

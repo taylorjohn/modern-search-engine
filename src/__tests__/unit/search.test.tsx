@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, act, waitFor, fireEvent } from '@testing-library/react';
 import Search from '../../pages/Search';
+import React from 'react';
 
 // Mock components
 vi.mock('@/components/document', () => ({
@@ -60,6 +61,16 @@ vi.mock('@/services', () => ({
       ];
     })
   }
+}));
+
+// Mock Error Context
+vi.mock('@/contexts/ErrorContext', () => ({
+  useError: () => ({
+    handleError: vi.fn(),
+    clearError: vi.fn(),
+    error: null,
+  }),
+  ErrorProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>
 }));
 
 describe('Search Component', () => {

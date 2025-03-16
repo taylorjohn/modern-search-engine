@@ -7,11 +7,19 @@ interface MetricCardProps {
   value: string | number;
   icon: React.ElementType;
   testId?: string;
+  description?: string;
 }
 
-export function MetricCard({ title, value, icon: Icon, testId }: MetricCardProps) {
+export function MetricCard({ title, value, icon: Icon, testId, description }: MetricCardProps) {
+  const [showTooltip, setShowTooltip] = React.useState(false);
+
   return (
-    <Card data-testid={testId || `metric-${title.toLowerCase()}`}>
+    <Card 
+      data-testid={testId || `metric-${title.toLowerCase()}`}
+      className="relative"
+      onMouseEnter={() => description && setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+    >
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -22,6 +30,13 @@ export function MetricCard({ title, value, icon: Icon, testId }: MetricCardProps
           </div>
           <div className="font-bold text-lg">{value}</div>
         </div>
+        
+        {/* Descriptive tooltip */}
+        {showTooltip && description && (
+          <div className="absolute -bottom-12 left-0 right-0 bg-gray-800 text-white text-xs p-2 rounded z-10 shadow-lg">
+            {description}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
