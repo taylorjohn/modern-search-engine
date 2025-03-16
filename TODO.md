@@ -50,11 +50,12 @@ The following items need attention to improve the codebase:
 
 1. **Test Coverage**
    - [ ] Add tests for searchService.ts
-   - [ ] Add more integration tests for search and upload flows
+   - [x] Add more integration tests for search and upload flows
    - [ ] Fix flaky tests in search.test.tsx
    - [ ] Fix TypeScript errors in test files
 
 2. **Test Infrastructure**
+   - [x] Add TestIDs to components for better testing
    - [ ] Set up more robust mock services
    - [ ] Add test utilities for common operations
    - [ ] Configure proper test timeouts
