@@ -1,8 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Search as SearchIcon, Clock, Hash, BarChart2, Zap } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import DocumentUpload from './DocumentUpload';
-import ProcessingStatus from './ProcessingStatus';
+import { DocumentUpload, ProcessingStatus } from '@/components/document';
 
 export default function Search() {
   const [query, setQuery] = useState('');

@@ -1,129 +1,205 @@
-// src/pages/Search.tsx
 import React, { useState, useCallback } from 'react';
-import { Search as SearchIcon, Clock, Hash, BarChart2, Zap } from 'lucide-react';
+import { Clock, Hash, BarChart2, Zap } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import DocumentUpload from '../components/document/DocumentUpload';
-import ProcessingStatus from '../components/document/ProcessingStatus';
-import SearchResults from '../components/SearchResults';
+import { MetricCard } from '@/components/ui';
+import { DocumentUpload, ProcessingStatus } from '@/components/document';
+import { SearchBar, SearchResultList, SearchHistory } from '@/components/search';
+import { searchService } from '@/services';
+
+interface SearchResult {
+  id: string;
+  title: string;
+  content: string;
+  documentType: string;
+  scores: {
+    vectorScore: number;
+    finalScore: number;
+  };
+  metadata: {
+    created: number;
+    wordCount: number;
+    type: string;
+  };
+}
+
+interface SearchHistoryItem {
+  query: string;
+  results: number;
+}
 
 export default function Search() {
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [expandedItems, setExpandedItems] = useState(new Set<string>());
-  const [results, setResults] = useState([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
   const [processingStatus, setProcessingStatus] = useState({
     id: '',
-    status: 'pending' as const,
+    status: 'pending',
     progress: 0,
-    message: ''
+    message: '',
   });
+  const [stats, setStats] = useState({
+    time: '0ms',
+    results: 0,
+    score: '0%',
+    mode: 'text',
+  });
+
+  const handleSearch = useCallback(async (searchQuery: string) => {
+    if (!searchQuery.trim()) {
+      setResults([]);
+      return;
+    }
+
+    setIsLoading(true);
+    const startTime = performance.now();
+
+    try {
+      // This would normally call an API, but for now we're using the local service
+      const searchResults = searchService.search(searchQuery);
+      const endTime = performance.now();
+
+      setResults(searchResults);
+      
+      setStats({
+        time: `${Math.round(endTime - startTime)}ms`,
+        results: searchResults.length,
+        score: searchResults.length > 0 
+          ? `${Math.max(...searchResults.map(r => r.score * 100)).toFixed(1)}%`
+          : '0%',
+        mode: 'text',
+      });
+      
+      setSearchHistory(prev => [
+        { query: searchQuery, results: searchResults.length },
+        ...prev.filter(item => item.query !== searchQuery).slice(0, 4)
+      ]);
+    } catch (error) {
+      console.error('Search failed:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const handleSearchChange = (value: string) => {
+    setQuery(value);
+    if (value.length > 2) {
+      handleSearch(value);
+    } else if (!value) {
+      setResults([]);
+    }
+  };
 
   const handleFilesSelected = useCallback((files: File[]) => {
     if (files.length === 0) return;
-    
-    // Initialize processing
+
     setProcessingStatus({
       id: Date.now().toString(),
       status: 'processing',
       progress: 0,
-      message: 'Processing files...'
+      message: 'Processing files...',
     });
 
-    // Simulate processing steps with immediate state updates
-    const updateProcessing = (progress: number) => {
-      setProcessingStatus(prev => ({
+    // Simulate file processing
+    setTimeout(() => {
+      setProcessingStatus((prev) => ({
         ...prev,
-        progress,
-        status: progress === 100 ? 'completed' : 'processing',
-        message: progress === 100 ? 'Processing complete' : 'Processing files...'
+        status: 'completed',
+        progress: 100,
+        message: 'Processing complete',
       }));
-    };
-
-    // Schedule updates
-    setTimeout(() => updateProcessing(25), 100);
-    setTimeout(() => updateProcessing(50), 500);
-    setTimeout(() => updateProcessing(75), 1000);
-    setTimeout(() => updateProcessing(100), 1500);
+    }, 2000); // Simulate 2 seconds of processing
   }, []);
 
-  const toggleExpand = useCallback((id: string) => {
-    setExpandedItems(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  }, []);
+  const handleHistorySelect = (selectedQuery: string) => {
+    setQuery(selectedQuery);
+    handleSearch(selectedQuery);
+  };
 
   const statsData = [
-    { title: 'Time', value: '0s', icon: Clock },
-    { title: 'Results', value: results.length, icon: Hash },
-    { title: 'Score', value: '0%', icon: BarChart2 },
-    { title: 'Mode', value: 'text', icon: Zap }
+    { title: 'Time', value: stats.time, icon: Clock, testId: 'time' },
+    { title: 'Results', value: stats.results, icon: Hash, testId: 'results' },
+    { title: 'Score', value: stats.score, icon: BarChart2, testId: 'score' },
+    { title: 'Mode', value: stats.mode, icon: Zap, testId: 'mode' },
   ];
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-4xl font-bold mb-2">Modern Search Engine</h1>
-      <p className="text-gray-600">Search with transparency and real-time insights</p>
+      <p className="text-gray-600">Upload documents to start searching through their content</p>
 
-      <div className="flex gap-4 mt-8">
-        <div className="relative flex-1">
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search documents..."
-            className="w-full px-10 py-2 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            data-testid="search-input"
-          />
-          {isLoading ? (
-            <div className="absolute right-3 top-2.5 animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full" />
-          ) : (
-            <SearchIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-          )}
-        </div>
+      <div className="mt-8">
+        <SearchBar
+          value={query}
+          onChange={handleSearchChange}
+          onSearch={() => handleSearch(query)}
+          isLoading={isLoading}
+          placeholder="Search documents..."
+        />
       </div>
 
       <div className="mt-8">
-        <DocumentUpload
-          onFilesSelected={handleFilesSelected}
-          accept="application/pdf,text/plain"
-          maxSize={10485760}
-        />
+        <Card>
+          <CardContent className="p-4">
+            <DocumentUpload
+              onFilesSelected={handleFilesSelected}
+              accept="application/pdf,text/plain"
+              maxSize={10485760}
+            />
+          </CardContent>
+        </Card>
       </div>
 
       {processingStatus.status !== 'pending' && (
         <div className="mt-6">
-          <ProcessingStatus 
-            status={processingStatus}
+          <ProcessingStatus
+            status={{
+              id: processingStatus.id,
+              status: processingStatus.status,
+              progress: processingStatus.progress,
+              message: processingStatus.message,
+            }}
+          />
+        </div>
+      )}
+
+      {searchHistory.length > 0 && (
+        <div className="mt-6">
+          <SearchHistory
+            history={searchHistory}
+            onSelect={handleHistorySelect}
           />
         </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-        {statsData.map(({ title, value, icon: Icon }) => (
-          <Card key={title} className="hover:shadow-lg transition-all duration-200">
-            <CardContent className="p-6">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">{title}</h3>
-                  <p className="text-2xl font-bold">{value}</p>
-                </div>
-                <Icon className="h-5 w-5 text-gray-400" />
-              </div>
-            </CardContent>
-          </Card>
+        {statsData.map(({ title, value, icon, testId }) => (
+          <MetricCard
+            key={title}
+            title={title}
+            value={value}
+            icon={icon}
+            testId={testId}
+          />
         ))}
       </div>
 
-      <SearchResults
-        results={results}
-        expandedItems={expandedItems}
-        onToggleExpand={toggleExpand}
+      <SearchResultList
+        results={results.map(result => ({
+          ...result,
+          documentType: 'Document',
+          scores: {
+            vectorScore: result.score * 0.8,
+            finalScore: result.score
+          },
+          metadata: {
+            created: Date.now(),
+            wordCount: result.content.split(/\s+/).length,
+            type: 'Text'
+          }
+        }))}
+        isLoading={isLoading}
+        query={query}
       />
     </div>
   );
