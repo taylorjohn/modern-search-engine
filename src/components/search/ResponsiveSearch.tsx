@@ -3,21 +3,24 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Search as SearchIcon, Clock, Hash, BarChart2, X, Filter, Keyboard } from 'lucide-react';
 import { useSearchAPI } from '@/hooks/useSearchAPI';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { SearchBar } from '@/components/search';
+import { SearchBar, SearchHistory, SearchHistoryManager } from '@/components/search';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MetricCard, Toast } from '@/components/ui';
 import { SearchResultList } from '@/components/search';
+import { searchHistoryService } from '@/services';
 
 const ResponsiveSearch: React.FC = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+  const [showSearchHistory, setShowSearchHistory] = useState(false);
   const [selectedContentTypes, setSelectedContentTypes] = useState<string[]>([]);
   const [dateRange, setDateRange] = useState<{from: string | null, to: string | null}>({
     from: null,
     to: null
   });
+  const [searchHistory, setSearchHistory] = useState(searchHistoryService.getAll());
   
   // Use our custom search hook
   const {
@@ -68,6 +71,9 @@ const ResponsiveSearch: React.FC = () => {
       'f': () => {
         setShowFilters(prev => !prev);
       },
+      'h': () => {
+        setShowSearchHistory(prev => !prev);
+      },
       'k': () => {
         setShowKeyboardShortcuts(prev => !prev);
       }
@@ -80,6 +86,28 @@ const ResponsiveSearch: React.FC = () => {
   };
   
   const handleSearch = () => {
+    if (query.trim()) {
+      // Save search to history when executed
+      searchHistoryService.add({
+        query: query,
+        results: totalResults,
+        timestamp: Date.now(),
+        filters: {
+          contentTypes: selectedContentTypes,
+          authors: [] // No author filters in current UI
+        }
+      });
+      
+      // Update the history state
+      setSearchHistory(searchHistoryService.getAll());
+      
+      // Execute the search
+      search();
+    }
+  };
+  
+  const handleHistorySelect = (query: string) => {
+    setQuery(query);
     search();
   };
   
@@ -169,6 +197,7 @@ const ResponsiveSearch: React.FC = () => {
             Esc - Clear search
             S - Execute search
             F - Toggle filters
+            H - Toggle history
             K - Show/hide shortcuts
           `}
           type="info"
@@ -230,6 +259,16 @@ const ResponsiveSearch: React.FC = () => {
         <Button
           variant="outline"
           size="sm"
+          onClick={() => setShowSearchHistory(!showSearchHistory)}
+          className="flex items-center justify-center gap-2"
+        >
+          <Clock className="h-4 w-4" />
+          <span className="sr-only md:not-sr-only md:inline-block">History</span>
+        </Button>
+        
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => setShowKeyboardShortcuts(true)}
           className="flex items-center justify-center gap-2"
         >
@@ -240,6 +279,61 @@ const ResponsiveSearch: React.FC = () => {
       
       {/* Responsive Layout */}
       <div className="flex flex-col md:flex-row gap-6">
+        {/* Search History (Left Side on Desktop) */}
+        {showSearchHistory && (
+          <div className="w-full md:w-64 flex-shrink-0">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-medium">Search History</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="md:hidden"
+                    onClick={() => setShowSearchHistory(false)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                {searchHistory.length > 0 ? (
+                  <div className="space-y-3">
+                    {searchHistory.slice(0, 10).map((item, index) => (
+                      <div 
+                        key={index} 
+                        className="p-2 hover:bg-gray-100 rounded cursor-pointer"
+                        onClick={() => handleHistorySelect(item.query)}
+                      >
+                        <div className="font-medium text-sm">{item.query}</div>
+                        <div className="text-xs text-gray-500 flex justify-between">
+                          <span>{new Date(item.timestamp).toLocaleDateString()}</span>
+                          <span>{item.results} results</span>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    <div className="pt-2 border-t">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => {
+                          searchHistoryService.clear();
+                          setSearchHistory([]);
+                        }}
+                      >
+                        Clear History
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No search history yet</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+        
         {/* Filters (Left Side on Desktop) */}
         {showFilters && (
           <div className="w-full md:w-64 flex-shrink-0">

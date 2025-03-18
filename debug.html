@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debug Page</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      padding: 1rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1 { color: #2563eb; }
+    pre { background: #f1f5f9; padding: 1rem; overflow: auto; }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+    }
+    button:hover { background: #1d4ed8; }
+    #output { margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>Modern Search Engine Debug Page</h1>
+  <p>This page will help diagnose rendering issues with the app.</p>
+  
+  <div>
+    <button id="checkReactBtn">Check React</button>
+    <button id="checkDomBtn">Check DOM</button>
+    <button id="checkTailwindBtn">Check Tailwind</button>
+  </div>
+  
+  <pre id="output">Click a button to run diagnostics</pre>
+
+  <script>
+    document.getElementById('checkReactBtn').addEventListener('click', function() {
+      const output = document.getElementById('output');
+      output.textContent = 'Checking React availability...\n';
+      
+      try {
+        output.textContent += 'React in window: ' + (window.React !== undefined ? 'YES' : 'NO') + '\n';
+        output.textContent += 'ReactDOM in window: ' + (window.ReactDOM !== undefined ? 'YES' : 'NO') + '\n';
+      } catch (err) {
+        output.textContent += 'Error checking React: ' + err.message + '\n';
+      }
+    });
+
+    document.getElementById('checkDomBtn').addEventListener('click', function() {
+      const output = document.getElementById('output');
+      output.textContent = 'Checking DOM...\n';
+      
+      try {
+        const rootEl = document.getElementById('root');
+        output.textContent += 'Root element exists: ' + (rootEl !== null ? 'YES' : 'NO') + '\n';
+        
+        if (rootEl) {
+          output.textContent += 'Root element children: ' + rootEl.childNodes.length + '\n';
+          output.textContent += 'Root element HTML: ' + rootEl.innerHTML.substring(0, 100) + '...\n';
+        }
+      } catch (err) {
+        output.textContent += 'Error checking DOM: ' + err.message + '\n';
+      }
+    });
+
+    document.getElementById('checkTailwindBtn').addEventListener('click', function() {
+      const output = document.getElementById('output');
+      output.textContent = 'Checking Tailwind styles...\n';
+      
+      try {
+        const styleSheets = document.styleSheets;
+        output.textContent += 'Number of style sheets: ' + styleSheets.length + '\n';
+        
+        let tailwindFound = false;
+        for (let i = 0; i < styleSheets.length; i++) {
+          try {
+            const sheet = styleSheets[i];
+            const rules = sheet.cssRules || sheet.rules;
+            for (let j = 0; j < rules.length; j++) {
+              if (rules[j].cssText && rules[j].cssText.includes('--tw-')) {
+                tailwindFound = true;
+                break;
+              }
+            }
+            if (tailwindFound) break;
+          } catch (e) {
+            output.textContent += 'Could not access stylesheet ' + i + ': ' + e.message + '\n';
+          }
+        }
+        
+        output.textContent += 'Tailwind styles found: ' + (tailwindFound ? 'YES' : 'NO') + '\n';
+      } catch (err) {
+        output.textContent += 'Error checking Tailwind: ' + err.message + '\n';
+      }
+    });
+  </script>
+</body>
+</html>
